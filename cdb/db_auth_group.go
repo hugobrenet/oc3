@@ -318,6 +318,7 @@ func (oDb *DB) DeleteGroupCascade(ctx context.Context, groupID int64) error {
 		"comp_moduleset_team_publication",
 		"comp_ruleset_team_responsible",
 		"comp_ruleset_team_publication",
+		"notification_subscriptions",
 	}
 	for _, t := range tables {
 		query := "DELETE FROM " + t + " WHERE group_id = ?"

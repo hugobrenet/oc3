@@ -113,15 +113,17 @@ func cmdSafeEncrypt() *cobra.Command {
 func cmdSafeRewrap() *cobra.Command {
 	return &cobra.Command{
 		Use:   "rewrap",
-		Short: "wrap the keys of the encrypted safe files with the active master key",
+		Short: "wrap the keys of the encrypted safe files and of the secrets with the active master key",
 		Long: "After adding a master key and making it the active one, wrap with it the keys " +
-			"of the files encrypted with the others; the files are left as they are. The " +
-			"previous keys can be removed from the keys file once it is done.",
+			"of the files encrypted with the others, and of the secrets sealed with them in " +
+			"the database (form connectors, notification channels); the contents are left " +
+			"as they are. The previous keys can be removed from the keys file once it is done.",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := setup(sectionSafe); err != nil {
 				return err
 			}
-			return safeEach(func(ctx context.Context, svc *safe.Service, odb *cdb.DB) ([]*cdb.SafeFile, func(*cdb.SafeFile) error, error) {
+			secretsErr := rewrapSealedSecrets()
+			filesErr := safeEach(func(ctx context.Context, svc *safe.Service, odb *cdb.DB) ([]*cdb.SafeFile, func(*cdb.SafeFile) error, error) {
 				active := svc.Ring.Active()
 				if active == nil {
 					return nil, nil, errors.New("no master key is configured (safe.keys_file)")
@@ -129,8 +131,67 @@ func cmdSafeRewrap() *cobra.Command {
 				files, err := odb.SafeFilesToRewrap(ctx, active.ID, safeBatch)
 				return files, func(f *cdb.SafeFile) error { return svc.Rewrap(ctx, odb, f) }, err
 			}, "rewrapped")
+			return errors.Join(secretsErr, filesErr)
 		},
 	}
+}
+
+// rewrapSealedSecrets wraps with the active master key the keys of the secrets
+// sealed in the database with another one (cdb.SealedSecretTables), a batch
+// after the other. A row that fails is reported and skipped; it fails if any
+// did.
+func rewrapSealedSecrets() error {
+	ctx := context.Background()
+	svc, err := newSafeService()
+	if err != nil {
+		return err
+	}
+	if svc.Ring == nil || svc.Ring.Active() == nil {
+		return errors.New("no master key is configured (safe.keys_file)")
+	}
+	active := svc.Ring.Active()
+	db, err := newDatabase(sectionSafe)
+	if err != nil {
+		return err
+	}
+	odb := cdb.New(db)
+	failed := map[string]bool{}
+	var count int
+	for {
+		refs, err := odb.SealedSecretsToRewrap(ctx, active.ID, safeBatch)
+		if err != nil {
+			return err
+		}
+		progress := false
+		for _, r := range refs {
+			key := r.Table.Table + ":" + strconv.FormatInt(r.ID, 10)
+			if failed[key] {
+				continue
+			}
+			keyID, wrapped, err := safe.RewrapSecret(svc.Ring, r.Table.Label(r.ID), r.KeyID, r.WrappedKey)
+			if err == nil {
+				var ok bool
+				if ok, err = odb.SetSealedSecretKey(ctx, r, keyID, wrapped); err == nil && !ok {
+					err = errors.New("the row changed during the rewrap")
+				}
+			}
+			if err != nil {
+				slog.Error(fmt.Sprintf("secrets of %s %d (%s): %s", r.Table.Kind, r.ID, r.Name, err))
+				failed[key] = true
+				continue
+			}
+			count++
+			progress = true
+		}
+		if !progress {
+			break
+		}
+	}
+	slog.Info(fmt.Sprintf("safe: %d secret(s) rewrapped, %d failed", count, len(failed)))
+	if len(failed) > 0 {
+		return fmt.Errorf("%d secret(s) could not be rewrapped", len(failed))
+	}
+	return nil
 }
 
 // safeEach applies an operation to the rows a batch function selects, a batch

@@ -788,6 +788,72 @@ func (e NetworkSegmentRowSegType) Valid() bool {
 	}
 }
 
+// Defines values for NotificationChannelType.
+const (
+	NotificationChannelEmail      NotificationChannelType = "email"
+	NotificationChannelMattermost NotificationChannelType = "mattermost"
+	NotificationChannelSlack      NotificationChannelType = "slack"
+	NotificationChannelTeams      NotificationChannelType = "teams"
+	NotificationChannelWebhook    NotificationChannelType = "webhook"
+)
+
+// Valid indicates whether the value is a known member of the NotificationChannelType enum.
+func (e NotificationChannelType) Valid() bool {
+	switch e {
+	case NotificationChannelEmail:
+		return true
+	case NotificationChannelMattermost:
+		return true
+	case NotificationChannelSlack:
+		return true
+	case NotificationChannelTeams:
+		return true
+	case NotificationChannelWebhook:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for NotificationPeriodPeriod.
+const (
+	NotificationPeriodAlways NotificationPeriodPeriod = "always"
+	NotificationPeriodCustom NotificationPeriodPeriod = "custom"
+	NotificationPeriodNever  NotificationPeriodPeriod = "never"
+)
+
+// Valid indicates whether the value is a known member of the NotificationPeriodPeriod enum.
+func (e NotificationPeriodPeriod) Valid() bool {
+	switch e {
+	case NotificationPeriodAlways:
+		return true
+	case NotificationPeriodCustom:
+		return true
+	case NotificationPeriodNever:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for NotificationSubscriptionScope.
+const (
+	NotificationScopeAll         NotificationSubscriptionScope = "all"
+	NotificationScopeResponsible NotificationSubscriptionScope = "responsible"
+)
+
+// Valid indicates whether the value is a known member of the NotificationSubscriptionScope enum.
+func (e NotificationSubscriptionScope) Valid() bool {
+	switch e {
+	case NotificationScopeAll:
+		return true
+	case NotificationScopeResponsible:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for ObsolescenceSettingRowObsType.
 const (
 	Hw ObsolescenceSettingRowObsType = "hw"
@@ -965,6 +1031,24 @@ func (e OrchestrationTargetsMode) Valid() bool {
 	case Pick:
 		return true
 	case SameAs:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for SafeSecretKind.
+const (
+	SafeSecretFormConnector       SafeSecretKind = "form_connector"
+	SafeSecretNotificationChannel SafeSecretKind = "notification_channel"
+)
+
+// Valid indicates whether the value is a known member of the SafeSecretKind enum.
+func (e SafeSecretKind) Valid() bool {
+	switch e {
+	case SafeSecretFormConnector:
+		return true
+	case SafeSecretNotificationChannel:
 		return true
 	default:
 		return false
@@ -1172,6 +1256,33 @@ func (e SysreportPurgeFileKind) Valid() bool {
 	case Command:
 		return true
 	case File:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UserNotificationLevel.
+const (
+	UserNotificationLevelCritical UserNotificationLevel = "critical"
+	UserNotificationLevelDebug    UserNotificationLevel = "debug"
+	UserNotificationLevelError    UserNotificationLevel = "error"
+	UserNotificationLevelInfo     UserNotificationLevel = "info"
+	UserNotificationLevelWarning  UserNotificationLevel = "warning"
+)
+
+// Valid indicates whether the value is a known member of the UserNotificationLevel enum.
+func (e UserNotificationLevel) Valid() bool {
+	switch e {
+	case UserNotificationLevelCritical:
+		return true
+	case UserNotificationLevelDebug:
+		return true
+	case UserNotificationLevelError:
+		return true
+	case UserNotificationLevelInfo:
+		return true
+	case UserNotificationLevelWarning:
 		return true
 	default:
 		return false
@@ -4956,6 +5067,225 @@ type NodeStatsResponse struct {
 	Data []NodeStatSeries `json:"data"`
 }
 
+// NotificationChannel A destination of the alert notifications. email sends to the addresses;
+// slack and mattermost post to an incoming webhook; teams posts an Adaptive
+// Card to a Workflows webhook ("When a Teams webhook request is received");
+// webhook posts a JSON document (version 1), signed with the secret when
+// set: X-OC3-Signature is "sha256=" and the hex of the HMAC-SHA256 of
+// X-OC3-Timestamp, a dot and the body.
+type NotificationChannel struct {
+	// Addresses The mail addresses of an email channel.
+	Addresses   []string `json:"addresses"`
+	Created     string   `json:"created"`
+	Description string   `json:"description"`
+	Enabled     bool     `json:"enabled"`
+
+	// IconUrl The picture a Slack or a Mattermost message shows, when the webhook lets the sender choose it.
+	IconUrl *string `json:"icon_url,omitempty"`
+	Id      int64   `json:"id"`
+	Name    string  `json:"name"`
+
+	// Networks The private networks the webhook host may resolve to, as CIDR prefixes; the public addresses are always allowed.
+	Networks []string `json:"networks"`
+
+	// Secrets Whether each secret is set; their values are never returned.
+	Secrets struct {
+		Secret bool `json:"secret"`
+		Url    bool `json:"url"`
+	} `json:"secrets"`
+	Type      NotificationChannelType `json:"type"`
+	Updated   string                  `json:"updated"`
+	UpdatedBy string                  `json:"updated_by"`
+
+	// Username The name a Slack or a Mattermost message shows, when the webhook lets the sender choose it.
+	Username *string `json:"username,omitempty"`
+}
+
+// NotificationChannelInput defines model for NotificationChannelInput.
+type NotificationChannelInput struct {
+	// Addresses The mail addresses of an email channel, one at least.
+	Addresses   *[]string `json:"addresses,omitempty"`
+	Description *string   `json:"description,omitempty"`
+
+	// Enabled true when absent.
+	Enabled *bool   `json:"enabled,omitempty"`
+	IconUrl *string `json:"icon_url,omitempty"`
+
+	// Name 1 to 64 letters, digits, ".", "_" or "-".
+	Name     string    `json:"name"`
+	Networks *[]string `json:"networks,omitempty"`
+
+	// Secrets url, the webhook url (https), required by the webhook types; secret,
+	// the key signing the generic webhooks. A value replaces the secret set,
+	// null removes it, absent keeps it.
+	Secrets *struct {
+		Secret *string `json:"secret,omitempty"`
+		Url    *string `json:"url,omitempty"`
+	} `json:"secrets,omitempty"`
+	Type     NotificationChannelType `json:"type"`
+	Username *string                 `json:"username,omitempty"`
+}
+
+// NotificationChannelTestResult defines model for NotificationChannelTestResult.
+type NotificationChannelTestResult struct {
+	DurationMs int `json:"duration_ms"`
+
+	// Error Why the channel did not accept the message.
+	Error *string `json:"error,omitempty"`
+	Ok    bool    `json:"ok"`
+}
+
+// NotificationChannelType defines model for NotificationChannelType.
+type NotificationChannelType string
+
+// NotificationDeliveryListResponse defines model for NotificationDeliveryListResponse.
+type NotificationDeliveryListResponse struct {
+	Data NotificationDeliveryListResponse_Data `json:"data"`
+	Meta *ListMeta                             `json:"meta,omitempty"`
+}
+
+// NotificationDeliveryListResponseData0 defines model for .
+type NotificationDeliveryListResponseData0 = []NotificationDeliveryRow
+
+// NotificationDeliveryListResponseData1 defines model for .
+type NotificationDeliveryListResponseData1 map[string]map[string]int
+
+// NotificationDeliveryListResponse_Data defines model for NotificationDeliveryListResponse.Data.
+type NotificationDeliveryListResponse_Data struct {
+	union json.RawMessage
+}
+
+// NotificationDeliveryRow A notification of an alert to a recipient. Every property is optional: the
+// props query parameter selects which the server returns.
+type NotificationDeliveryRow struct {
+	AlertId      *int    `json:"alert_id,omitempty"`
+	AlertMessage *string `json:"alert_message,omitempty"`
+	AlertObject  *string `json:"alert_object,omitempty"`
+
+	// AlertPresent Whether the alert is still in the dashboard.
+	AlertPresent  *bool   `json:"alert_present,omitempty"`
+	AlertSeverity *int    `json:"alert_severity,omitempty"`
+	AlertType     *string `json:"alert_type,omitempty"`
+	Attempts      *int    `json:"attempts,omitempty"`
+	ChannelName   *string `json:"channel_name,omitempty"`
+	Created       *string `json:"created,omitempty"`
+	GroupRole     *string `json:"group_role,omitempty"`
+	Id            *int    `json:"id,omitempty"`
+	LastError     *string `json:"last_error,omitempty"`
+
+	// NextTry When a failed delivery is tried again.
+	NextTry *string `json:"next_try,omitempty"`
+
+	// Recipient subscription:<id>, or email:user:<id>.
+	Recipient *string `json:"recipient,omitempty"`
+
+	// RecipientKind subscription, or user (the personal mails).
+	RecipientKind *string `json:"recipient_kind,omitempty"`
+
+	// RecipientLabel The channel and the group of the subscription, or the mail address of the user.
+	RecipientLabel *string `json:"recipient_label,omitempty"`
+
+	// State pending, sent or failed.
+	State   *string `json:"state,omitempty"`
+	Updated *string `json:"updated,omitempty"`
+}
+
+// NotificationPeriod defines model for NotificationPeriod.
+type NotificationPeriod struct {
+	// Begin HH:MM, for custom.
+	Begin *string `json:"begin,omitempty"`
+
+	// End HH:MM, for custom; before begin, the period spans midnight.
+	End    *string                  `json:"end,omitempty"`
+	Period NotificationPeriodPeriod `json:"period"`
+}
+
+// NotificationPeriodPeriod defines model for NotificationPeriod.Period.
+type NotificationPeriodPeriod string
+
+// NotificationSubscription defines model for NotificationSubscription.
+type NotificationSubscription struct {
+	ChannelId   int64  `json:"channel_id"`
+	ChannelName string `json:"channel_name"`
+	Created     string `json:"created"`
+
+	// DelayMin The age in minutes an alert reaches before it is sent.
+	DelayMin int  `json:"delay_min"`
+	Enabled  bool `json:"enabled"`
+
+	// Envs Only the alerts of these environments (dash_env, PRD, DEV...); empty for all.
+	Envs []string `json:"envs"`
+
+	// FiltersetId Only the alerts of the nodes and services of this filterset; a filterset selecting nothing lets no alert through.
+	FiltersetId *int   `json:"filterset_id,omitempty"`
+	GroupId     int64  `json:"group_id"`
+	GroupRole   string `json:"group_role"`
+	Id          int64  `json:"id"`
+
+	// MinSeverity The lowest severity sent, 0 notice, 1 warning, 2 error, 3 critical, 4 alert.
+	MinSeverity int `json:"min_severity"`
+
+	// NotifyResolved Announce the alerts sent once they are gone from the dashboard.
+	NotifyResolved bool `json:"notify_resolved"`
+
+	// Periods The periods of the week the subscription sends on, by day (mon to sun):
+	// always, never, or custom from begin to end, "HH:MM", local time of the
+	// collector; a day left out is always. Empty for always.
+	Periods map[string]NotificationPeriod `json:"periods"`
+
+	// Scope responsible, the alerts of the apps the group is responsible for; all, every alert.
+	Scope NotificationSubscriptionScope `json:"scope"`
+
+	// TypesExclude Not the alerts of these types.
+	TypesExclude []string `json:"types_exclude"`
+
+	// TypesInclude Only the alerts of these types (dash_type); empty for all.
+	TypesInclude []string `json:"types_include"`
+	Updated      string   `json:"updated"`
+	UpdatedBy    string   `json:"updated_by"`
+}
+
+// NotificationSubscriptionInput defines model for NotificationSubscriptionInput.
+type NotificationSubscriptionInput struct {
+	ChannelId int64 `json:"channel_id"`
+
+	// DelayMin 0 to 1440, 0 when absent.
+	DelayMin *int `json:"delay_min,omitempty"`
+
+	// Enabled true when absent.
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// Envs Only the alerts of these environments (dash_env, PRD, DEV...); empty for all.
+	Envs *[]string `json:"envs,omitempty"`
+
+	// FiltersetId Only the alerts of the nodes and services of this filterset; a filterset selecting nothing lets no alert through.
+	FiltersetId *int  `json:"filterset_id,omitempty"`
+	GroupId     int64 `json:"group_id"`
+
+	// MinSeverity 0 to 4, 1 (warning) when absent.
+	MinSeverity *int `json:"min_severity,omitempty"`
+
+	// NotifyResolved Announce the alerts sent once they are gone from the dashboard.
+	NotifyResolved *bool `json:"notify_resolved,omitempty"`
+
+	// Periods The periods of the week the subscription sends on, by day (mon to sun):
+	// always, never, or custom from begin to end, "HH:MM", local time of the
+	// collector; a day left out is always. Empty for always.
+	Periods *map[string]NotificationPeriod `json:"periods,omitempty"`
+
+	// Scope responsible, the alerts of the apps the group is responsible for; all, every alert.
+	Scope *NotificationSubscriptionScope `json:"scope,omitempty"`
+
+	// TypesExclude Not the alerts of these types.
+	TypesExclude *[]string `json:"types_exclude,omitempty"`
+
+	// TypesInclude Only the alerts of these types (dash_type); empty for all.
+	TypesInclude *[]string `json:"types_include,omitempty"`
+}
+
+// NotificationSubscriptionScope responsible, the alerts of the apps the group is responsible for; all, every alert.
+type NotificationSubscriptionScope string
+
 // ObsolescenceSettingListResponse defines model for ObsolescenceSettingListResponse.
 type ObsolescenceSettingListResponse struct {
 	Data ObsolescenceSettingListResponse_Data `json:"data"`
@@ -5782,6 +6112,33 @@ type SafeInfoResponse struct {
 	Info string `json:"info"`
 }
 
+// SafeSecret defines model for SafeSecret.
+type SafeSecret struct {
+	Id int64 `json:"id"`
+
+	// KeyActive Whether it is the active key; else oc3 safe rewrap wraps them with it.
+	KeyActive bool `json:"key_active"`
+
+	// KeyId The master key the secrets are wrapped with.
+	KeyId string `json:"key_id"`
+
+	// KeyKnown Whether the server has the key; the secrets do not open without it.
+	KeyKnown bool           `json:"key_known"`
+	Kind     SafeSecretKind `json:"kind"`
+	Name     string         `json:"name"`
+	Updated  string         `json:"updated"`
+}
+
+// SafeSecretKind defines model for SafeSecret.Kind.
+type SafeSecretKind string
+
+// SafeSecretsResponse defines model for SafeSecretsResponse.
+type SafeSecretsResponse struct {
+	// ActiveKeyId The active master key, absent without safe.keys_file.
+	ActiveKeyId *string      `json:"active_key_id,omitempty"`
+	Data        []SafeSecret `json:"data"`
+}
+
 // SanTopology defines model for SanTopology.
 type SanTopology struct {
 	Links []SanTopologyLink `json:"links"`
@@ -6434,6 +6791,34 @@ type UserListResponse_Data struct {
 	union json.RawMessage
 }
 
+// UserNotificationLevel defines model for UserNotificationLevel.
+type UserNotificationLevel string
+
+// UserNotifications defines model for UserNotifications.
+type UserNotifications struct {
+	// Email The address the alerts are mailed to.
+	Email              string                `json:"email"`
+	EmailLogLevel      UserNotificationLevel `json:"email_log_level"`
+	EmailNotifications bool                  `json:"email_notifications"`
+
+	// EmailNotificationsDelay Minutes an alert waits before it is mailed.
+	EmailNotificationsDelay int `json:"email_notifications_delay"`
+
+	// MailEnabled Whether the collector sends the notifications by mail (notifications.enable and an SMTP server).
+	MailEnabled bool                          `json:"mail_enabled"`
+	Periods     map[string]NotificationPeriod `json:"periods"`
+}
+
+// UserNotificationsInput defines model for UserNotificationsInput.
+type UserNotificationsInput struct {
+	EmailLogLevel      UserNotificationLevel `json:"email_log_level"`
+	EmailNotifications bool                  `json:"email_notifications"`
+
+	// EmailNotificationsDelay 0 to 1440.
+	EmailNotificationsDelay int                            `json:"email_notifications_delay"`
+	Periods                 *map[string]NotificationPeriod `json:"periods,omitempty"`
+}
+
 // UserPrefsResponse The stored preferences, as saved by POST /users/{user_id}/prefs. The
 // collector never interprets the content; an empty object means "no
 // preferences stored", "user unknown" or "user not visible" alike.
@@ -6625,6 +7010,12 @@ type InPathMsetId = string
 
 // InPathNodeId defines model for inPathNodeId.
 type InPathNodeId = string
+
+// InPathNotificationChannelId defines model for inPathNotificationChannelId.
+type InPathNotificationChannelId = int64
+
+// InPathNotificationSubscriptionId defines model for inPathNotificationSubscriptionId.
+type InPathNotificationSubscriptionId = int64
 
 // InPathOrchestrationId defines model for inPathOrchestrationId.
 type InPathOrchestrationId = int
@@ -13005,6 +13396,68 @@ type GetNodeWikiParams struct {
 	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// GetNotificationDeliveriesParams defines parameters for GetNotificationDeliveries.
+type GetNotificationDeliveriesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+}
+
+// GetNotificationSubscriptionsParams defines parameters for GetNotificationSubscriptions.
+type GetNotificationSubscriptionsParams struct {
+	// ChannelId Only the subscriptions to this channel.
+	ChannelId *int64 `form:"channel_id,omitempty" json:"channel_id,omitempty"`
+}
+
 // DeleteObsolescenceSettingsJSONBody defines parameters for DeleteObsolescenceSettings.
 type DeleteObsolescenceSettingsJSONBody struct {
 	// Id Obsolescence setting record id
@@ -16327,6 +16780,18 @@ type PostNodeSysreportPurgeJSONRequestBody = SysreportPurgeInput
 // PostNodeWikiJSONRequestBody defines body for PostNodeWiki for application/json ContentType.
 type PostNodeWikiJSONRequestBody = WikiRevisionInput
 
+// PostNotificationChannelsJSONRequestBody defines body for PostNotificationChannels for application/json ContentType.
+type PostNotificationChannelsJSONRequestBody = NotificationChannelInput
+
+// PutNotificationChannelJSONRequestBody defines body for PutNotificationChannel for application/json ContentType.
+type PutNotificationChannelJSONRequestBody = NotificationChannelInput
+
+// PostNotificationSubscriptionsJSONRequestBody defines body for PostNotificationSubscriptions for application/json ContentType.
+type PostNotificationSubscriptionsJSONRequestBody = NotificationSubscriptionInput
+
+// PutNotificationSubscriptionJSONRequestBody defines body for PutNotificationSubscription for application/json ContentType.
+type PutNotificationSubscriptionJSONRequestBody = NotificationSubscriptionInput
+
 // DeleteObsolescenceSettingsJSONRequestBody defines body for DeleteObsolescenceSettings for application/json ContentType.
 type DeleteObsolescenceSettingsJSONRequestBody DeleteObsolescenceSettingsJSONBody
 
@@ -16434,6 +16899,9 @@ type PostUsersJSONRequestBody PostUsersJSONBody
 
 // PutUserSelfFiltersetJSONRequestBody defines body for PutUserSelfFilterset for application/json ContentType.
 type PutUserSelfFiltersetJSONRequestBody PutUserSelfFiltersetJSONBody
+
+// PutUserSelfNotificationsJSONRequestBody defines body for PutUserSelfNotifications for application/json ContentType.
+type PutUserSelfNotificationsJSONRequestBody = UserNotificationsInput
 
 // PostUserSelfPasswordJSONRequestBody defines body for PostUserSelfPassword for application/json ContentType.
 type PostUserSelfPasswordJSONRequestBody PostUserSelfPasswordJSONBody
@@ -18690,6 +19158,68 @@ func (t NodeListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *NodeListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsNotificationDeliveryListResponseData0 returns the union data inside the NotificationDeliveryListResponse_Data as a NotificationDeliveryListResponseData0
+func (t NotificationDeliveryListResponse_Data) AsNotificationDeliveryListResponseData0() (NotificationDeliveryListResponseData0, error) {
+	var body NotificationDeliveryListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromNotificationDeliveryListResponseData0 overwrites any union data inside the NotificationDeliveryListResponse_Data as the provided NotificationDeliveryListResponseData0
+func (t *NotificationDeliveryListResponse_Data) FromNotificationDeliveryListResponseData0(v NotificationDeliveryListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeNotificationDeliveryListResponseData0 performs a merge with any union data inside the NotificationDeliveryListResponse_Data, using the provided NotificationDeliveryListResponseData0
+func (t *NotificationDeliveryListResponse_Data) MergeNotificationDeliveryListResponseData0(v NotificationDeliveryListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsNotificationDeliveryListResponseData1 returns the union data inside the NotificationDeliveryListResponse_Data as a NotificationDeliveryListResponseData1
+func (t NotificationDeliveryListResponse_Data) AsNotificationDeliveryListResponseData1() (NotificationDeliveryListResponseData1, error) {
+	var body NotificationDeliveryListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromNotificationDeliveryListResponseData1 overwrites any union data inside the NotificationDeliveryListResponse_Data as the provided NotificationDeliveryListResponseData1
+func (t *NotificationDeliveryListResponse_Data) FromNotificationDeliveryListResponseData1(v NotificationDeliveryListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeNotificationDeliveryListResponseData1 performs a merge with any union data inside the NotificationDeliveryListResponse_Data, using the provided NotificationDeliveryListResponseData1
+func (t *NotificationDeliveryListResponse_Data) MergeNotificationDeliveryListResponseData1(v NotificationDeliveryListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t NotificationDeliveryListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *NotificationDeliveryListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

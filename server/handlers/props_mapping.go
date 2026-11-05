@@ -33,6 +33,12 @@ func clusterListCol(name string) *schema.Col {
 	return &schema.Col{T: schema.TClusters, Name: name, Nullable: true}
 }
 
+// notifyDeliveryCol is a column of the delivery lists, whose derived table is
+// named after notification_deliveries.
+func notifyDeliveryCol(name string) *schema.Col {
+	return &schema.Col{T: &schema.Table{Name: "notification_deliveries"}, Name: name, Nullable: true}
+}
+
 // oidcMappingListCol is a computed column of the claim rule lists, whose derived
 // table is named after auth_oidc_mappings.
 func oidcMappingListCol(name string) *schema.Col {
@@ -1667,6 +1673,39 @@ var propsMapping = map[string]propMapping{
 			"allowed":     colStr(cdb.FieldConstraintTableCol("allowed")),
 			"updated":     colStr(cdb.FieldConstraintTableCol("updated")),
 			"updated_by":  colStr(cdb.FieldConstraintTableCol("updated_by")),
+		},
+	},
+	// The notifications sent, computed by the derived table of the delivery
+	// queries (cdb.GetNotifyDeliveries).
+	"notification_delivery": {
+		Available: []string{
+			"id", "alert_id", "recipient", "recipient_kind", "recipient_label", "channel_name", "group_role",
+			"state", "attempts", "last_error", "next_try", "alert_severity", "alert_type", "alert_object",
+			"alert_message", "alert_present", "created", "updated",
+		},
+		Default: []string{
+			"id", "alert_id", "recipient_kind", "recipient_label", "state", "attempts", "last_error",
+			"alert_severity", "alert_type", "alert_object", "alert_message", "alert_present", "updated",
+		},
+		Props: map[string]propDef{
+			"id":              col(notifyDeliveryCol("id")),
+			"alert_id":        col(notifyDeliveryCol("alert_id")),
+			"recipient":       colStr(notifyDeliveryCol("recipient")),
+			"recipient_kind":  colStr(notifyDeliveryCol("recipient_kind")),
+			"recipient_label": colStr(notifyDeliveryCol("recipient_label")),
+			"channel_name":    colStr(notifyDeliveryCol("channel_name")),
+			"group_role":      colStr(notifyDeliveryCol("group_role")),
+			"state":           colStr(notifyDeliveryCol("state")),
+			"attempts":        colInt(notifyDeliveryCol("attempts")),
+			"last_error":      colStr(notifyDeliveryCol("last_error")),
+			"next_try":        col(notifyDeliveryCol("next_try")),
+			"alert_severity":  colIntNullable(notifyDeliveryCol("alert_severity")),
+			"alert_type":      colStr(notifyDeliveryCol("alert_type")),
+			"alert_object":    colStr(notifyDeliveryCol("alert_object")),
+			"alert_message":   colStr(notifyDeliveryCol("alert_message")),
+			"alert_present":   {Col: notifyDeliveryCol("alert_present"), Kind: "bool"},
+			"created":         colStr(notifyDeliveryCol("created")),
+			"updated":         colStr(notifyDeliveryCol("updated")),
 		},
 	},
 	"oidc_mapping": {

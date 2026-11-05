@@ -48,3 +48,27 @@ func OpenSecret(ring *Keyring, label string, content []byte, keyID string, wrapp
 	defer wipe(recordKey)
 	return open(recordKey, content, secretContentAAD(label))
 }
+
+// RewrapSecret wraps the per-record key of a secret sealed by SealSecret with
+// the active master key, the content left as it is: what a rotation of the
+// master key changes.
+func RewrapSecret(ring *Keyring, label, keyID string, wrappedKey []byte) (string, []byte, error) {
+	master := ring.Get(keyID)
+	if master == nil {
+		return "", nil, fmt.Errorf("safe: the master key %q of the secret is not in the keyring", keyID)
+	}
+	active := ring.Active()
+	if active == nil {
+		return "", nil, ErrNoKey
+	}
+	recordKey, err := open(master.Secret, wrappedKey, secretKeyAAD(label))
+	if err != nil {
+		return "", nil, err
+	}
+	defer wipe(recordKey)
+	wrapped, err := seal(active.Secret, recordKey, secretKeyAAD(label))
+	if err != nil {
+		return "", nil, err
+	}
+	return active.ID, wrapped, nil
+}

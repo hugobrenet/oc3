@@ -5100,6 +5100,35 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /safe/secrets:
+    get:
+      operationId: GetSafeSecrets
+      description: |
+        The secrets sealed with the safe master key apart from the safe files: those
+        of the form connectors and of the notification channels, stored encrypted in
+        their own rows. Their values are never returned: only what holds them and
+        the master key they are wrapped with, to see what depends on a key before
+        removing it (oc3 safe rewrap wraps them with the active key). A Manager sees
+        them all, an AlertsManager the notification channels, a FormsManager the
+        form connectors.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeSecretsResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
   /safe/upload:
     post:
       operationId: PostSafeUpload
@@ -10752,6 +10781,351 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /notifications/channels:
+    get:
+      operationId: GetNotificationChannels
+      description: |
+        The channels of the alert notifications: the mail lists and the Slack,
+        Mattermost, Teams and generic webhooks the subscriptions send to. Their
+        secrets (the webhook url, the signing secret) are never returned, only
+        whether each one is set. For the Managers and the AlertsManagers.
+      tags:
+        - notifications
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NotificationChannel'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostNotificationChannels
+      description: |
+        Create a channel. Its secrets are sealed with the safe master key
+        (safe.keys_file): without one, a webhook channel is refused. For the
+        Managers and the AlertsManagers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationChannelInput'
+      tags:
+        - notifications
+      responses:
+        200:
+          description: The channel created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannel'
+        400:
+          $ref: '#/components/responses/400'
+        409:
+          $ref: '#/components/responses/409'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+  /notifications/channels/{channel_id}:
+    get:
+      operationId: GetNotificationChannel
+      parameters:
+        - $ref: '#/components/parameters/inPathNotificationChannelId'
+      tags:
+        - notifications
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannel'
+        404:
+          $ref: '#/components/responses/404'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    put:
+      operationId: PutNotificationChannel
+      description: |
+        Replace a channel. A secret given replaces the one set, null removes it,
+        absent keeps it. For the Managers and the AlertsManagers.
+      parameters:
+        - $ref: '#/components/parameters/inPathNotificationChannelId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationChannelInput'
+      tags:
+        - notifications
+      responses:
+        200:
+          description: The channel replaced.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannel'
+        400:
+          $ref: '#/components/responses/400'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteNotificationChannel
+      description: Delete a channel and its subscriptions. For the Managers and the AlertsManagers.
+      parameters:
+        - $ref: '#/components/parameters/inPathNotificationChannelId'
+      tags:
+        - notifications
+      responses:
+        204:
+          description: Deleted.
+        404:
+          $ref: '#/components/responses/404'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+  /notifications/channels/{channel_id}/test:
+    post:
+      operationId: PostNotificationChannelTest
+      description: |
+        Send a test message to the channel, at once, whether it is enabled or not:
+        a sample alert, recorded nowhere. The answer tells whether the channel
+        accepted it. For the Managers and the AlertsManagers.
+      parameters:
+        - $ref: '#/components/parameters/inPathNotificationChannelId'
+      tags:
+        - notifications
+      responses:
+        200:
+          description: The outcome of the sending.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannelTestResult'
+        404:
+          $ref: '#/components/responses/404'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+  /notifications/deliveries:
+    get:
+      operationId: GetNotificationDeliveries
+      description: |
+        The notifications sent, being sent or failed: an alert and its recipient,
+        a subscription (channel and group) or the mail address of a user, as the
+        other lists: props, column filters, sort, pagination and value statistics.
+        Kept as long as the alert is in the dashboard, two days more for the
+        subscriptions announcing the resolutions. For the Managers and the
+        AlertsManagers.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - notifications
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationDeliveryListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+  /notifications/subscriptions:
+    get:
+      operationId: GetNotificationSubscriptions
+      description: |
+        The subscriptions of the groups to the channels: the alerts of a group,
+        those of the apps it is responsible for or all of them, from a severity,
+        sent to a channel. For the Managers and the AlertsManagers.
+      parameters:
+        - in: query
+          name: channel_id
+          description: Only the subscriptions to this channel.
+          schema:
+            type: integer
+            format: int64
+      tags:
+        - notifications
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NotificationSubscription'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostNotificationSubscriptions
+      description: Create a subscription. For the Managers and the AlertsManagers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationSubscriptionInput'
+      tags:
+        - notifications
+      responses:
+        200:
+          description: The subscription created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationSubscription'
+        400:
+          $ref: '#/components/responses/400'
+        409:
+          $ref: '#/components/responses/409'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+  /notifications/subscriptions/{subscription_id}:
+    put:
+      operationId: PutNotificationSubscription
+      description: Replace a subscription. For the Managers and the AlertsManagers.
+      parameters:
+        - $ref: '#/components/parameters/inPathNotificationSubscriptionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationSubscriptionInput'
+      tags:
+        - notifications
+      responses:
+        200:
+          description: The subscription replaced.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationSubscription'
+        400:
+          $ref: '#/components/responses/400'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteNotificationSubscription
+      description: Delete a subscription. For the Managers and the AlertsManagers.
+      parameters:
+        - $ref: '#/components/parameters/inPathNotificationSubscriptionId'
+      tags:
+        - notifications
+      responses:
+        204:
+          description: Deleted.
+        404:
+          $ref: '#/components/responses/404'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
   /obsolescence/settings:
     get:
       operationId: GetObsolescenceSettings
@@ -14352,6 +14726,61 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /users/self/notifications:
+    get:
+      operationId: GetUserSelfNotifications
+      description: |
+        The settings of the alert notifications of the signed-in user: whether
+        the new alerts of the apps their groups are responsible for are mailed to
+        them, from which level, after which delay, on which periods of the week.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserNotifications'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    put:
+      operationId: PutUserSelfNotifications
+      description: |
+        Change the settings of the alert notifications of the signed-in user.
+        Not while impersonating. The periods are kept in the user preferences,
+        as notifications_periods.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserNotificationsInput'
+      tags:
+        - collector
+      responses:
+        200:
+          description: The settings saved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserNotifications'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
   /users/self/password:
     post:
       operationId: PostUserSelfPassword
@@ -25255,6 +25684,492 @@ components:
           type: string
           description: Why the call failed before an answer, a refused address say.
 
+    NotificationChannelType:
+      type: string
+      enum:
+        - email
+        - slack
+        - mattermost
+        - teams
+        - webhook
+      x-enum-varnames:
+        - NotificationChannelEmail
+        - NotificationChannelSlack
+        - NotificationChannelMattermost
+        - NotificationChannelTeams
+        - NotificationChannelWebhook
+
+    NotificationChannel:
+      type: object
+      description: |
+        A destination of the alert notifications. email sends to the addresses;
+        slack and mattermost post to an incoming webhook; teams posts an Adaptive
+        Card to a Workflows webhook ("When a Teams webhook request is received");
+        webhook posts a JSON document (version 1), signed with the secret when
+        set: X-OC3-Signature is "sha256=" and the hex of the HMAC-SHA256 of
+        X-OC3-Timestamp, a dot and the body.
+      required:
+        - id
+        - name
+        - type
+        - description
+        - enabled
+        - addresses
+        - networks
+        - secrets
+        - updated_by
+        - created
+        - updated
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/NotificationChannelType'
+        description:
+          type: string
+        enabled:
+          type: boolean
+        addresses:
+          type: array
+          description: The mail addresses of an email channel.
+          items:
+            type: string
+        username:
+          type: string
+          description: The name a Slack or a Mattermost message shows, when the webhook lets the sender choose it.
+        icon_url:
+          type: string
+          description: The picture a Slack or a Mattermost message shows, when the webhook lets the sender choose it.
+        networks:
+          type: array
+          description: The private networks the webhook host may resolve to, as CIDR prefixes; the public addresses are always allowed.
+          items:
+            type: string
+        secrets:
+          type: object
+          description: Whether each secret is set; their values are never returned.
+          required:
+            - url
+            - secret
+          properties:
+            url:
+              type: boolean
+            secret:
+              type: boolean
+        updated_by:
+          type: string
+        created:
+          type: string
+        updated:
+          type: string
+
+    NotificationChannelInput:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          description: 1 to 64 letters, digits, ".", "_" or "-".
+        type:
+          $ref: '#/components/schemas/NotificationChannelType'
+        description:
+          type: string
+        enabled:
+          type: boolean
+          description: true when absent.
+        addresses:
+          type: array
+          description: The mail addresses of an email channel, one at least.
+          items:
+            type: string
+        username:
+          type: string
+        icon_url:
+          type: string
+        networks:
+          type: array
+          items:
+            type: string
+        secrets:
+          type: object
+          description: |
+            url, the webhook url (https), required by the webhook types; secret,
+            the key signing the generic webhooks. A value replaces the secret set,
+            null removes it, absent keeps it.
+          properties:
+            url:
+              type: string
+              nullable: true
+            secret:
+              type: string
+              nullable: true
+
+    NotificationChannelTestResult:
+      type: object
+      required:
+        - ok
+        - duration_ms
+      properties:
+        ok:
+          type: boolean
+        duration_ms:
+          type: integer
+        error:
+          type: string
+          description: Why the channel did not accept the message.
+
+    NotificationSubscription:
+      type: object
+      required:
+        - id
+        - channel_id
+        - channel_name
+        - group_id
+        - group_role
+        - scope
+        - min_severity
+        - delay_min
+        - enabled
+        - types_include
+        - types_exclude
+        - envs
+        - periods
+        - notify_resolved
+        - updated_by
+        - created
+        - updated
+      properties:
+        id:
+          type: integer
+          format: int64
+        channel_id:
+          type: integer
+          format: int64
+        channel_name:
+          type: string
+        group_id:
+          type: integer
+          format: int64
+        group_role:
+          type: string
+        scope:
+          $ref: '#/components/schemas/NotificationSubscriptionScope'
+        min_severity:
+          type: integer
+          description: The lowest severity sent, 0 notice, 1 warning, 2 error, 3 critical, 4 alert.
+        delay_min:
+          type: integer
+          description: The age in minutes an alert reaches before it is sent.
+        enabled:
+          type: boolean
+        types_include:
+          type: array
+          description: Only the alerts of these types (dash_type); empty for all.
+          items:
+            type: string
+        types_exclude:
+          type: array
+          description: Not the alerts of these types.
+          items:
+            type: string
+        envs:
+          type: array
+          description: Only the alerts of these environments (dash_env, PRD, DEV...); empty for all.
+          items:
+            type: string
+        filterset_id:
+          type: integer
+          nullable: true
+          description: Only the alerts of the nodes and services of this filterset; a filterset selecting nothing lets no alert through.
+        periods:
+          type: object
+          description: |
+            The periods of the week the subscription sends on, by day (mon to sun):
+            always, never, or custom from begin to end, "HH:MM", local time of the
+            collector; a day left out is always. Empty for always.
+          additionalProperties:
+            $ref: '#/components/schemas/NotificationPeriod'
+        notify_resolved:
+          type: boolean
+          description: Announce the alerts sent once they are gone from the dashboard.
+        updated_by:
+          type: string
+        created:
+          type: string
+        updated:
+          type: string
+
+    NotificationSubscriptionScope:
+      type: string
+      description: responsible, the alerts of the apps the group is responsible for; all, every alert.
+      enum:
+        - responsible
+        - all
+      x-enum-varnames:
+        - NotificationScopeResponsible
+        - NotificationScopeAll
+
+    NotificationSubscriptionInput:
+      type: object
+      required:
+        - channel_id
+        - group_id
+      properties:
+        channel_id:
+          type: integer
+          format: int64
+        group_id:
+          type: integer
+          format: int64
+        scope:
+          $ref: '#/components/schemas/NotificationSubscriptionScope'
+        min_severity:
+          type: integer
+          description: 0 to 4, 1 (warning) when absent.
+        delay_min:
+          type: integer
+          description: 0 to 1440, 0 when absent.
+        enabled:
+          type: boolean
+          description: true when absent.
+        types_include:
+          type: array
+          description: Only the alerts of these types (dash_type); empty for all.
+          items:
+            type: string
+        types_exclude:
+          type: array
+          description: Not the alerts of these types.
+          items:
+            type: string
+        envs:
+          type: array
+          description: Only the alerts of these environments (dash_env, PRD, DEV...); empty for all.
+          items:
+            type: string
+        filterset_id:
+          type: integer
+          nullable: true
+          description: Only the alerts of the nodes and services of this filterset; a filterset selecting nothing lets no alert through.
+        periods:
+          type: object
+          description: |
+            The periods of the week the subscription sends on, by day (mon to sun):
+            always, never, or custom from begin to end, "HH:MM", local time of the
+            collector; a day left out is always. Empty for always.
+          additionalProperties:
+            $ref: '#/components/schemas/NotificationPeriod'
+        notify_resolved:
+          type: boolean
+          description: Announce the alerts sent once they are gone from the dashboard.
+
+    NotificationPeriod:
+      type: object
+      required:
+        - period
+      properties:
+        period:
+          type: string
+          enum:
+            - always
+            - never
+            - custom
+          x-enum-varnames:
+            - NotificationPeriodAlways
+            - NotificationPeriodNever
+            - NotificationPeriodCustom
+        begin:
+          type: string
+          description: HH:MM, for custom.
+        end:
+          type: string
+          description: HH:MM, for custom; before begin, the period spans midnight.
+
+    NotificationDeliveryRow:
+      type: object
+      description: |
+        A notification of an alert to a recipient. Every property is optional: the
+        props query parameter selects which the server returns.
+      properties:
+        id:
+          type: integer
+        alert_id:
+          type: integer
+        recipient:
+          type: string
+          description: subscription:<id>, or email:user:<id>.
+        recipient_kind:
+          type: string
+          description: subscription, or user (the personal mails).
+        recipient_label:
+          type: string
+          description: The channel and the group of the subscription, or the mail address of the user.
+        channel_name:
+          type: string
+        group_role:
+          type: string
+        state:
+          type: string
+          description: pending, sent or failed.
+        attempts:
+          type: integer
+        last_error:
+          type: string
+        next_try:
+          type: string
+          nullable: true
+          description: When a failed delivery is tried again.
+        alert_severity:
+          type: integer
+          nullable: true
+        alert_type:
+          type: string
+        alert_object:
+          type: string
+        alert_message:
+          type: string
+        alert_present:
+          type: boolean
+          description: Whether the alert is still in the dashboard.
+        created:
+          type: string
+        updated:
+          type: string
+
+    NotificationDeliveryListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/NotificationDeliveryRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    UserNotificationLevel:
+      type: string
+      enum:
+        - debug
+        - info
+        - warning
+        - error
+        - critical
+      x-enum-varnames:
+        - UserNotificationLevelDebug
+        - UserNotificationLevelInfo
+        - UserNotificationLevelWarning
+        - UserNotificationLevelError
+        - UserNotificationLevelCritical
+
+    UserNotifications:
+      type: object
+      required:
+        - email
+        - email_notifications
+        - email_log_level
+        - email_notifications_delay
+        - periods
+        - mail_enabled
+      properties:
+        email:
+          type: string
+          description: The address the alerts are mailed to.
+        email_notifications:
+          type: boolean
+        email_log_level:
+          $ref: '#/components/schemas/UserNotificationLevel'
+        email_notifications_delay:
+          type: integer
+          description: Minutes an alert waits before it is mailed.
+        periods:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/NotificationPeriod'
+        mail_enabled:
+          type: boolean
+          description: Whether the collector sends the notifications by mail (notifications.enable and an SMTP server).
+
+    UserNotificationsInput:
+      type: object
+      required:
+        - email_notifications
+        - email_log_level
+        - email_notifications_delay
+      properties:
+        email_notifications:
+          type: boolean
+        email_log_level:
+          $ref: '#/components/schemas/UserNotificationLevel'
+        email_notifications_delay:
+          type: integer
+          description: 0 to 1440.
+        periods:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/NotificationPeriod'
+
+    SafeSecret:
+      type: object
+      required:
+        - kind
+        - id
+        - name
+        - key_id
+        - key_active
+        - key_known
+        - updated
+      properties:
+        kind:
+          type: string
+          enum:
+            - form_connector
+            - notification_channel
+          x-enum-varnames:
+            - SafeSecretFormConnector
+            - SafeSecretNotificationChannel
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        key_id:
+          type: string
+          description: The master key the secrets are wrapped with.
+        key_active:
+          type: boolean
+          description: Whether it is the active key; else oc3 safe rewrap wraps them with it.
+        key_known:
+          type: boolean
+          description: Whether the server has the key; the secrets do not open without it.
+        updated:
+          type: string
+
+    SafeSecretsResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SafeSecret'
+        active_key_id:
+          type: string
+          description: The active master key, absent without safe.keys_file.
+
     FormCandidatesInput:
       type: object
       properties:
@@ -28314,6 +29229,20 @@ components:
       description: The object of the node, as namespace/kind/name. Default the node.
       schema:
         type: string
+    inPathNotificationChannelId:
+      in: path
+      name: channel_id
+      required: true
+      schema:
+        type: integer
+        format: int64
+    inPathNotificationSubscriptionId:
+      in: path
+      name: subscription_id
+      required: true
+      schema:
+        type: integer
+        format: int64
     inPathOrchestrationId:
       in: path
       name: orchestration_id

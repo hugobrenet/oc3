@@ -10,10 +10,10 @@ import (
 	"html"
 	"io"
 	"net/http"
-	"net/smtp"
 	neturl "net/url"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -22,6 +22,7 @@ import (
 
 	"github.com/opensvc/oc3/cdb"
 	"github.com/opensvc/oc3/util/egress"
+	"github.com/opensvc/oc3/util/mail"
 )
 
 // formattedData returns the data an output works on: the submitted data, or
@@ -446,28 +447,25 @@ func (s *formSubmission) outputMail(ctx context.Context, output map[string]any, 
 	return nil
 }
 
-// sendFormMail sends an html mail through the configured SMTP server:
-// server.mail.server (host:port), server.mail.sender and, optionally,
-// server.mail.login as "user:password".
+// sendFormMail sends an html mail through the SMTP server of server.mail:
+// server (host:port), sender and, optionally, username and password, or the
+// historical login "user:password", and security (auto, starttls, tls, none).
 func sendFormMail(to []string, subject, body string) error {
-	server := viper.GetString("server.mail.server")
-	sender := viper.GetString("server.mail.sender")
-	if server == "" || sender == "" {
+	cfg := mail.ConfigFromViper("server.mail")
+	if !cfg.IsSet() {
 		return errors.New("mail is not configured (server.mail.server, server.mail.sender)")
 	}
-	var auth smtp.Auth
-	if login := viper.GetString("server.mail.login"); login != "" {
-		user, password, _ := strings.Cut(login, ":")
-		host, _, _ := strings.Cut(server, ":")
-		auth = smtp.PlainAuth("", user, password, host)
-	}
-	msg := "From: " + sender + "\r\n" +
-		"To: " + strings.Join(to, ", ") + "\r\n" +
-		"Subject: " + strings.ReplaceAll(subject, "\n", " ") + "\r\n" +
-		"MIME-Version: 1.0\r\n" +
-		"Content-Type: text/html; charset=utf-8\r\n\r\n" + body
-	return smtp.SendMail(server, auth, sender, to, []byte(msg))
+	return mail.Send(context.Background(), cfg, mail.Message{To: to, Subject: subject, Text: htmlToText(body), HTML: body})
 }
+
+// htmlToText returns the text of an html body, for the mail readers showing
+// no html.
+func htmlToText(s string) string {
+	s = strings.NewReplacer("</p>", "\n", "<br>", "\n", "</pre>", "\n").Replace(s)
+	return html.UnescapeString(htmlTag.ReplaceAllString(s, ""))
+}
+
+var htmlTag = regexp.MustCompile(`<[^>]*>`)
 
 // outputWorkflow stores the submitted form as a workflow step, as
 // output_workflow() does: a new workflow, or the next step of the workflow the
