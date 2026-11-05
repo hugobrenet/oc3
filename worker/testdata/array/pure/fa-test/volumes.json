@@ -1,0 +1,2 @@
+[{"id":"0b6e4a1c-5f9e-27d3-8a41-6c2e9f0b1d77","name":"vol-db01","serial":"A1B2C3D4E5F6A7B8C9D0E1F2","provisioned":1099511627776,"space":{"total_physical":214748364800,"unique":0},"subtype":"regular","volume_group":{"name":""},"pod":{"name":""}},
+ {"id":"5d3c2b1a-0f9e-8d7c-6b5a-4f3e2d1c0b9a","name":"pod1::vol-app02","serial":"0011223344556677889900AA","provisioned":536870912000,"space":{"total_physical":1048575,"unique":0},"subtype":"regular","pod":{"name":"pod1"}}]

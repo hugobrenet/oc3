@@ -1,0 +1,1 @@
+[{"capacityInKB":"1073741824","freeCapacityInKB":"536870912","name":"dp_gold","objectID":"POOL.HUSVM.210945.1","poolFunction":"5","poolID":"1","raidLevel":"RAID6(6D+2P)"},{"capacityInKB":"2147483648","freeCapacityInKB":"1073741824","name":"dp_silver","objectID":"POOL.HUSVM.210945.2","poolFunction":"5","poolID":"2","raidLevel":"RAID5(7D+1P)"}]

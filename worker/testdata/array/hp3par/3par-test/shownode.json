@@ -1,0 +1,2 @@
+[{"Available_Cache":"100","Control_Mem":"32768","Data_Mem":"65536","InCluster":"Yes","LED":"GreenBlnk","Master":"Yes","Name":"1612345-0","Node":"0","State":"OK"},
+ {"Available_Cache":"100","Control_Mem":"32768","Data_Mem":"65536","InCluster":"Yes","LED":"GreenBlnk","Master":"No","Name":"1612345-1","Node":"1","State":"OK"}]

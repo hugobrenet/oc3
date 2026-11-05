@@ -1,0 +1,3 @@
+[{"name":"CT0.FC0","wwn":"52:4A:93:7A:E3:1B:7C:00","portal":"","iqn":""},
+ {"name":"CT0.ETH4","wwn":"","portal":"10.0.0.10:3260","iqn":"iqn.2010-06.com.purestorage:flasharray.1a2b"},
+ {"name":"CT1.FC0","wwn":"52:4A:93:7A:E3:1B:7C:10"}]

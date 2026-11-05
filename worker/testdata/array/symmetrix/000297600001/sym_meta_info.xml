@@ -1,0 +1,30 @@
+<?xml version="1.0" standalone="yes" ?>
+<SymCLI_ML>
+  <Symmetrix>
+    <Symm_Info>
+      <symid>000297600001</symid>
+    </Symm_Info>
+    <Device>
+      <Dev_Info>
+        <dev_name>00030</dev_name>
+        <configuration>RAID-5</configuration>
+      </Dev_Info>
+      <Product>
+        <wwn>60000970000297600001533030303330</wwn>
+      </Product>
+      <RAID-5_Device>
+        <RAID5_Dev_Info>
+          <tracks_per_stripe>4</tracks_per_stripe>
+        </RAID5_Dev_Info>
+      </RAID-5_Device>
+      <Meta>
+        <Meta_Device>
+          <dev_name>00030</dev_name>
+        </Meta_Device>
+        <Meta_Device>
+          <dev_name>00031</dev_name>
+        </Meta_Device>
+      </Meta>
+    </Device>
+  </Symmetrix>
+</SymCLI_ML>

@@ -1,0 +1,2 @@
+[{"name":"vol_db01","naa-name":"514f0c5d8a600001","index":1,"vol-size":"1073741824","logical-space-in-use":"268435456","created-from-volume":""},
+ {"name":"vol_db01.snap","naa-name":"514f0c5d8a600002","index":2,"vol-size":"1073741824","logical-space-in-use":"1024","created-from-volume":["4e2a8c4f1d2b4a8e9f0c1d2e3f4a5b6c","vol_db01",1]}]

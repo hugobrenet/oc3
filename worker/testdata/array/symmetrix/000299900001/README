@@ -1,0 +1,10 @@
+An extract of the configuration of a production array, as a v2 agent pushed
+it to the old collector, anonymized: the serials of the arrays, the wwn of
+their ports and devices, the addresses, the labels, the names of the groups
+and pools and the serials of the disks are replaced by fake ones, the same
+value always by the same fake, keeping the structure the parsers read. The
+array is cut to a subset of its devices.
+
+The rows in ../<this directory>.rows.json are the ones the old collector
+made of these outputs (insert_hds or insert_sym, without their database),
+with its init/modules parser run under python 2.7.

@@ -1,0 +1,8 @@
+The symcli outputs of the om3 driver tests (drivers/arraysymmetrix/testdata),
+in the sections v2 pushed them under, made to agree on their devices:
+sym_dev_info is synthesized to hold every device the other outputs name, and
+sym_dev_wwn_info, sym_meta_info, sym_ficondev_info and sym_sg_info gained the
+entries of those devices. Not captured from an array.
+
+The rows TestParseSymmetrix expects are the ones insert_sym made of these
+outputs, with the collector init/modules/symmetrix.py run under python 2.7.

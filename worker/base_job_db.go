@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/opensvc/oc3/cdb"
+	"github.com/opensvc/oc3/mariadb"
 )
 
 type (
@@ -90,4 +91,39 @@ func (d *JobDB) pushFromTableChanges(ctx context.Context) error {
 func (d *JobDB) pushScopedTableChanges(ctx context.Context, svcIDs, nodeIDs []string) error {
 	d.oDb.Session.Scope(svcIDs, nodeIDs)
 	return d.oDb.Session.NotifyChanges(ctx)
+}
+
+// upsert inserts or updates rows in table, on the unique key keys.
+func (d *JobDB) upsert(ctx context.Context, table string, keys, columns []string, rows []any) error {
+	if len(rows) == 0 {
+		return nil
+	}
+	mappings := make(mariadb.Mappings, len(columns))
+	for i, column := range columns {
+		mappings[i] = mariadb.Mapping{To: column}
+	}
+	request := mariadb.InsertOrUpdate{
+		Table:    table,
+		Mappings: mappings,
+		Keys:     keys,
+		Data:     rows,
+	}
+	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
+		return fmt.Errorf("upsert %s: %w", table, err)
+	} else if count > 0 {
+		d.oDb.SetChange(table)
+	}
+	return nil
+}
+
+// deleteOlder deletes the rows of table whose column key is value, updated
+// before the rows just written.
+func (d *JobDB) deleteOlder(ctx context.Context, table, key string, value any, updated string, now any) error {
+	query := fmt.Sprintf("DELETE FROM `%s` WHERE `%s` = ? AND `%s` < ?", table, key, updated)
+	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, query, value, now); err != nil {
+		return fmt.Errorf("query %s: %w", query, err)
+	} else if count > 0 {
+		d.oDb.SetChange(table)
+	}
+	return nil
 }

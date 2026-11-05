@@ -20,6 +20,14 @@ const (
 	FeedNodeDiskQ        = "oc3:q:feed_node_disk"
 	FeedNodeDiskPendingH = "oc3:h:feed_node_disk_pending"
 
+	FeedArrayH        = "oc3:h:feed_array"
+	FeedArrayQ        = "oc3:q:feed_array"
+	FeedArrayPendingH = "oc3:h:feed_array_pending"
+
+	// FeedArrayProxyS is the prefix of the set of the nodes that pushed
+	// an array since its last parse: FeedArrayProxyS + <type>@<name>.
+	FeedArrayProxyS = "oc3:s:feed_array_proxy:"
+
 	FeedSANSwitchH        = "oc3:h:feed_san_switch"
 	FeedSANSwitchQ        = "oc3:q:feed_san_switch"
 	FeedSANSwitchPendingH = "oc3:h:feed_san_switch_pending"

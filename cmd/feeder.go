@@ -47,9 +47,10 @@ func (t *feeder) apiRegister(e *echo.Echo) {
 		DB:  t.db,
 		ODB: odb,
 
-		Redis:       t.redis,
-		UI:          viper.GetBool(t.section + ".ui.enable"),
-		SyncTimeout: viper.GetDuration(t.section + ".sync.timeout"),
+		Redis:        t.redis,
+		UI:           viper.GetBool(t.section + ".ui.enable"),
+		SyncTimeout:  viper.GetDuration(t.section + ".sync.timeout"),
+		ArrayMaxSize: viper.GetInt64(t.section + ".array.max_size"),
 	}, pathApi)
 }
 

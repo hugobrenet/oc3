@@ -49,6 +49,8 @@ func setDefaultFeederConfig() {
 	viper.SetDefault(s+".ui.enable", false)
 	viper.SetDefault(s+".sync.timeout", "2s")
 	viper.SetDefault(s+".log.request.level", "none")
+	// The configuration of a big symmetrix weighs tens of megabytes.
+	viper.SetDefault(s+".array.max_size", 256<<20)
 }
 
 func setDefaultServerConfig() {

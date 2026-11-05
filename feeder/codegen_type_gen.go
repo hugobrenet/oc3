@@ -14,6 +14,33 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
+// Defines values for ArrayType.
+const (
+	Hds       ArrayType = "hds"
+	Hp3par    ArrayType = "hp3par"
+	Pure      ArrayType = "pure"
+	Symmetrix ArrayType = "symmetrix"
+	Xtremio   ArrayType = "xtremio"
+)
+
+// Valid indicates whether the value is a known member of the ArrayType enum.
+func (e ArrayType) Valid() bool {
+	switch e {
+	case Hds:
+		return true
+	case Hp3par:
+		return true
+	case Pure:
+		return true
+	case Symmetrix:
+		return true
+	case Xtremio:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SANSwitchType.
 const (
 	Brocade SANSwitchType = "brocade"
@@ -89,6 +116,22 @@ type ActionLine struct {
 type ActionRequestAccepted struct {
 	Uuid string `json:"uuid"`
 }
+
+// Array defines model for Array.
+type Array struct {
+	// Data the sections the driver reports, by name, each as the array
+	// answered it: a json document, or the text of a command output.
+	Data map[string]interface{} `json:"data"`
+
+	// Name the name of the array section in the agent configuration
+	Name string `json:"name"`
+
+	// Type the driver of the array, which says how data is read
+	Type ArrayType `json:"type"`
+}
+
+// ArrayType the driver of the array, which says how data is read
+type ArrayType string
 
 // Disk defines model for Disk.
 type Disk struct {
@@ -374,6 +417,9 @@ type bearerAuthContextKey string
 type PostInstanceStatusParams struct {
 	Sync *InQuerySync `form:"sync,omitempty" json:"sync,omitempty"`
 }
+
+// PostArrayJSONRequestBody defines body for PostArray for application/json ContentType.
+type PostArrayJSONRequestBody = Array
 
 // PostDaemonPingJSONRequestBody defines body for PostDaemonPing for application/json ContentType.
 type PostDaemonPingJSONRequestBody = PostDaemonPing

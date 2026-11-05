@@ -1,0 +1,2 @@
+[{"name":"X1-SC1-target1","port-type":"fc","port-address":"51:4F:0C:50:A2:3B:1C:00","port-state":"up"},
+ {"name":"X1-SC1-iscsi1","port-type":"iscsi","port-address":"iqn.2008-05.com.xtremio:xio00171234567-514f0c50a23b1c04","port-state":"up"}]

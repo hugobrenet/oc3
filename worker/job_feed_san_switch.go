@@ -10,7 +10,6 @@ import (
 
 	"github.com/opensvc/oc3/cachekeys"
 	"github.com/opensvc/oc3/feeder"
-	"github.com/opensvc/oc3/mariadb"
 	"github.com/opensvc/oc3/util/logkey"
 )
 
@@ -180,39 +179,4 @@ func (d *jobFeedSANSwitch) updateDB(ctx context.Context) error {
 		return err
 	}
 	return d.deleteOlder(ctx, "switches", "sw_name", s.Name, "sw_updated", now)
-}
-
-// upsert inserts or updates rows in table, on the unique key keys.
-func (d *jobFeedSANSwitch) upsert(ctx context.Context, table string, keys, columns []string, rows []any) error {
-	if len(rows) == 0 {
-		return nil
-	}
-	mappings := make(mariadb.Mappings, len(columns))
-	for i, column := range columns {
-		mappings[i] = mariadb.Mapping{To: column}
-	}
-	request := mariadb.InsertOrUpdate{
-		Table:    table,
-		Mappings: mappings,
-		Keys:     keys,
-		Data:     rows,
-	}
-	if count, err := request.ExecContextAndCountRowsAffected(ctx, d.db); err != nil {
-		return fmt.Errorf("upsert %s: %w", table, err)
-	} else if count > 0 {
-		d.oDb.SetChange(table)
-	}
-	return nil
-}
-
-// deleteOlder deletes the rows of table whose column key is value, updated
-// before the rows just written.
-func (d *jobFeedSANSwitch) deleteOlder(ctx context.Context, table, key string, value any, updated string, now any) error {
-	query := fmt.Sprintf("DELETE FROM `%s` WHERE `%s` = ? AND `%s` < ?", table, key, updated)
-	if count, err := d.oDb.ExecContextAndCountRowsAffected(ctx, query, value, now); err != nil {
-		return fmt.Errorf("query %s: %w", query, err)
-	} else if count > 0 {
-		d.oDb.SetChange(table)
-	}
-	return nil
 }

@@ -23,6 +23,10 @@ type (
 
 		// SyncTimeout is the timeout for synchronous api calls
 		SyncTimeout time.Duration
+
+		// ArrayMaxSize is the largest array configuration accepted, in
+		// bytes, once decompressed.
+		ArrayMaxSize int64
 	}
 )
 

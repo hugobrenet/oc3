@@ -416,6 +416,38 @@ paths:
       tags:
         - agent
 
+  /array:
+    post:
+      description: |
+        Update the configuration of a storage array, as the agent inventoried
+        it: the sections the driver of the array reports, which the worker
+        parses into the stor_array, stor_array_dg, stor_array_tgtid and
+        diskinfo tables. Every node declaring the array pushes it on its
+        schedule, and is recorded as a proxy of the array.
+
+        The body may be sent compressed, with Content-Encoding: gzip: the
+        configuration of a big array weighs megabytes. Its size, once
+        decompressed, is limited by feeder.array.max_size.
+      operationId: PostArray
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Array'
+      responses:
+        202:
+          description: the array configuration will be refreshed
+        400:
+          $ref: '#/components/responses/400'
+        413:
+          description: the configuration is larger than feeder.array.max_size
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+      tags:
+        - agent
+
   /sanswitch:
     post:
       description: |
@@ -792,6 +824,32 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Disk'
+
+    Array:
+      type: object
+      required:
+        - name
+        - type
+        - data
+      properties:
+        name:
+          type: string
+          description: the name of the array section in the agent configuration
+        type:
+          type: string
+          enum:
+            - hds
+            - hp3par
+            - pure
+            - symmetrix
+            - xtremio
+          description: the driver of the array, which says how data is read
+        data:
+          type: object
+          additionalProperties: {}
+          description: |
+            the sections the driver reports, by name, each as the array
+            answered it: a json document, or the text of a command output.
 
     SANSwitch:
       type: object

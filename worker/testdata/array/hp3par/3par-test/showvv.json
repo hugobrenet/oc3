@@ -1,0 +1,2 @@
+[{"Name":"admin","VV_WWN":"60002AC0000000000000000100012345","Prov":"full","CopyOf":"---","Tot_Rsvd_MB":"10240","VSize_MB":"10240","UsrCPG":"--","CreationTime":"2024-01-10 10:00:00 CET"},
+ {"Name":"vv_db01","VV_WWN":"60002AC000000000000000A200012345","Prov":"tpvv","CopyOf":"---","Tot_Rsvd_MB":"53248","VSize_MB":"204800","UsrCPG":"FC_r5","CreationTime":"2024-02-11 11:00:00 CET"}]
