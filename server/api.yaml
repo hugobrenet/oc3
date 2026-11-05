@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.4
+  version: 1.0.5
 
 paths:
   /actions:
