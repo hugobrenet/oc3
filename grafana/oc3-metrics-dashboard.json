@@ -79,7 +79,7 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
+        "w": 3,
         "x": 0,
         "y": 1
       },
@@ -166,7 +166,7 @@
       "gridPos": {
         "h": 4,
         "w": 3,
-        "x": 4,
+        "x": 3,
         "y": 1
       },
       "fieldConfig": {
@@ -260,8 +260,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 3,
-        "x": 7,
+        "w": 2,
+        "x": 6,
         "y": 1
       },
       "fieldConfig": {
@@ -320,6 +320,68 @@
     },
     {
       "type": "stat",
+      "title": "worker jobs/s",
+      "id": 59,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 8,
+        "y": 1
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "center",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name",
+        "orientation": "horizontal"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (job, instance) (rate(oc3_feed_job_executions_total{instance=~\"$instance\"}[$__rate_interval]))",
+          "legendFormat": "{{job}} {{instance}}",
+          "range": true,
+          "instant": false,
+          "refId": "A"
+        }
+      ],
+      "description": "Feed jobs executed per second by each worker, all job types and statuses."
+    },
+    {
+      "type": "stat",
       "title": "API p95 latency",
       "id": 5,
       "datasource": {
@@ -328,8 +390,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 10,
+        "w": 3,
+        "x": 13,
         "y": 1
       },
       "fieldConfig": {
@@ -422,8 +484,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 14,
+        "w": 3,
+        "x": 16,
         "y": 1
       },
       "fieldConfig": {
@@ -492,7 +554,7 @@
       "gridPos": {
         "h": 4,
         "w": 3,
-        "x": 18,
+        "x": 19,
         "y": 1
       },
       "fieldConfig": {
@@ -583,8 +645,8 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 3,
-        "x": 21,
+        "w": 2,
+        "x": 22,
         "y": 1
       },
       "fieldConfig": {
@@ -1823,7 +1885,7 @@
     },
     {
       "type": "timeseries",
-      "title": "feed jobs running vs runners",
+      "title": "feed jobs running vs runners (per worker)",
       "id": 20,
       "datasource": {
         "type": "prometheus",
@@ -1870,7 +1932,30 @@
           "unit": "short",
           "min": 0
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".* runners$"
+            },
+            "properties": [
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "fill": "dash",
+                  "dash": [
+                    10,
+                    10
+                  ]
+                }
+              },
+              {
+                "id": "custom.fillOpacity",
+                "value": 0
+              }
+            ]
+          }
+        ]
       },
       "options": {
         "legend": {
@@ -1898,8 +1983,8 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(oc3_feed_jobs_running{instance=~\"$instance\"})",
-          "legendFormat": "running",
+          "expr": "sum by (job, instance) (oc3_feed_jobs_running{instance=~\"$instance\"}) and on (job, instance) (sum by (job, instance) (oc3_feed_job_runners{instance=~\"$instance\"}) > 0)",
+          "legendFormat": "{{job}} {{instance}} running",
           "range": true,
           "instant": false,
           "refId": "A"
@@ -1910,13 +1995,14 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum(oc3_feed_job_runners{instance=~\"$instance\"})",
-          "legendFormat": "runners",
+          "expr": "sum by (job, instance) (oc3_feed_job_runners{instance=~\"$instance\"}) > 0",
+          "legendFormat": "{{job}} {{instance}} runners",
           "range": true,
           "instant": false,
           "refId": "B"
         }
-      ]
+      ],
+      "description": "Jobs running in each worker (solid), against its runners, the most it runs at once (dashed). Only the workers with runners."
     },
     {
       "type": "timeseries",

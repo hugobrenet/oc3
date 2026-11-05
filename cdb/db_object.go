@@ -137,8 +137,10 @@ func (t ObjectMeta) String() string {
 func (oDb *DB) ObjectFromID(ctx context.Context, svcID string) (*DBObject, error) {
 	const query = "SELECT svcname, svc_id, cluster_id, svc_availstatus, svc_status, svc_frozen, svc_placement, svc_provisioned, updated FROM `services` WHERE svc_id = ?"
 	var o DBObject
-	var frozen, placement, provisioned sql.NullString
-	err := oDb.DB.QueryRowContext(ctx, query, svcID).Scan(&o.Svcname, &o.SvcID, &o.ClusterID, &o.AvailStatus,
+	// svcname is NULL in a row ObjectStatusUpdate used to insert for a service
+	// deleted meanwhile: ObjectCreate repairs it.
+	var svcname, frozen, placement, provisioned sql.NullString
+	err := oDb.DB.QueryRowContext(ctx, query, svcID).Scan(&svcname, &o.SvcID, &o.ClusterID, &o.AvailStatus,
 		&o.OverallStatus, &frozen, &placement, &provisioned, &o.Updated)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
@@ -146,6 +148,7 @@ func (oDb *DB) ObjectFromID(ctx context.Context, svcID string) (*DBObject, error
 	case err != nil:
 		return nil, err
 	default:
+		o.Svcname = svcname.String
 		o.Frozen = frozen.String
 		o.Placement = placement.String
 		o.Provisioned = provisioned.String
@@ -275,21 +278,30 @@ func (oDb *DB) ObjectCreate(ctx context.Context, objectName, clusterID, candidat
 			return nil, err
 		}
 	}
-	if obj, err := oDb.ObjectFromID(ctx, svcID); err != nil {
-		return nil, err
+	var remediation string
+	obj, err := oDb.ObjectFromID(ctx, svcID)
+	if err != nil {
+		return nil, fmt.Errorf("retrieve object from id: %w", err)
 	} else if obj == nil {
 		// svc id exists without associated service
 		slog.Debug(fmt.Sprintf("will create service %s with existing svc_id: %s", objectName, svcID))
-		if err := oDb.insertOrUpdateObjectForNodeAndCandidateApp(ctx, objectName, svcID, candidateApp, node); err != nil {
-			return nil, err
-		}
-		if obj, err := oDb.ObjectFromID(ctx, svcID); err != nil {
-			return nil, err
-		} else if obj == nil {
-			return nil, fmt.Errorf("objectCreate %s: can't retrieve service with svc_id %s", objectName, svcID)
-		} else {
-			return obj, nil
-		}
+		remediation = "object created"
+	} else if obj.Svcname == "" {
+		// a service row without svcname, left by a status update of a service
+		// deleted meanwhile, is not found by name: rebuild it, or the feed of its
+		// cluster fails on it at each run.
+		slog.Warn(fmt.Sprintf("will repair service %s with existing svc_id %s: empty svcname", objectName, svcID))
+		remediation = "object repaired"
+	} else {
+		return obj, nil
+	}
+	if err := oDb.insertOrUpdateObjectForNodeAndCandidateApp(ctx, objectName, svcID, candidateApp, node); err != nil {
+		return nil, err
+	}
+	if obj, err := oDb.ObjectFromID(ctx, svcID); err != nil {
+		return nil, fmt.Errorf("retrieve object from id after %s: %w", remediation, err)
+	} else if obj == nil {
+		return nil, fmt.Errorf("objectCreate %s: can't retrieve service with svc_id %s", objectName, svcID)
 	} else {
 		return obj, nil
 	}
@@ -343,38 +355,41 @@ func (oDb *DB) ObjectsPing(ctx context.Context, ids []string) (updates bool, err
 	return
 }
 
-// ObjectStatusUpdate inserts or updates the services status columns.
+// ObjectStatusUpdate updates the services status columns.
 //
-// `updated` is only set on insert: on existing rows it is owned by config
-// pushes and api changes, and must not be overwritten by a stale cached value.
+// It never inserts: the rows are created with their svcname by ObjectCreate,
+// and a row deleted since the caller read it, by the purge of the services for
+// instance, stays deleted. Inserted, it would only hold the status columns,
+// without svcname, a row the feed could never find by name again.
 func (oDb *DB) ObjectStatusUpdate(ctx context.Context, l ...*DBObject) error {
 	defer logDuration("ObjectStatusUpdate", time.Now())
 	if len(l) == 0 {
 		return nil
 	}
-	rows := make([][]any, len(l))
-	for i, o := range l {
-		rows[i] = []any{o.SvcID, o.AvailStatus, o.OverallStatus, o.Placement, o.Frozen, o.Provisioned, o.Updated}
-	}
-	given, args := givenRows([]string{"svc_id", "svc_availstatus", "svc_status", "svc_placement", "svc_frozen", "svc_provisioned", "updated"}, rows)
-	changed, inserted, err := oDb.upsertRows(ctx, rowsUpsert{
-		table:   "services",
-		source:  "SELECT r.*, NOW() AS svc_status_updated FROM (" + given + ") r",
-		args:    args,
-		columns: []string{"svc_id", "svc_availstatus", "svc_status", "svc_placement", "svc_frozen", "svc_provisioned", "updated", "svc_status_updated"},
-		// The unique key k_svc_id.
-		match: "t.svc_id = s.svc_id",
-		update: []string{"svc_availstatus = s.svc_availstatus", "svc_status = s.svc_status", "svc_placement = s.svc_placement",
-			"svc_frozen = s.svc_frozen", "svc_provisioned = s.svc_provisioned", "svc_status_updated = s.svc_status_updated"},
-	})
+	query, args := objectStatusUpdateQuery(l)
+	count, err := oDb.execCountContext(ctx, query, args...)
 	if err != nil {
-		return err
+		return fmt.Errorf("objectStatusUpdate: %w", err)
 	}
-	if count := changed + inserted; count > 0 {
+	if count > 0 {
 		oDb.SetChange("services")
 		oDb.Metrics.ObjectStatusUpdate.Add(float64(count))
 	}
 	return nil
+}
+
+// objectStatusUpdateQuery returns the statement updating the status columns
+// of the services rows of l, and its arguments.
+func objectStatusUpdateQuery(l []*DBObject) (string, []any) {
+	rows := make([][]any, len(l))
+	for i, o := range l {
+		rows[i] = []any{o.SvcID, o.AvailStatus, o.OverallStatus, o.Placement, o.Frozen, o.Provisioned}
+	}
+	given, args := givenRows([]string{"svc_id", "svc_availstatus", "svc_status", "svc_placement", "svc_frozen", "svc_provisioned"}, rows)
+	query := "UPDATE `services` t JOIN (" + given + ") s ON t.svc_id = s.svc_id" +
+		" SET t.svc_availstatus = s.svc_availstatus, t.svc_status = s.svc_status, t.svc_placement = s.svc_placement," +
+		" t.svc_frozen = s.svc_frozen, t.svc_provisioned = s.svc_provisioned, t.svc_status_updated = NOW()"
+	return query, args
 }
 
 // ObjectUpdateLog handle services_log_last and services_log avail value changes.
@@ -698,8 +713,9 @@ func (oDb *DB) PurgeTablesFromObjectID(ctx context.Context, id string) error {
 	)
 
 	var (
+		// service_ids first, see serviceCascadeTables.
 		tables = []string{
-			"services", "svcactions", "drpservices", "svcmon_log", "resmon_log",
+			"service_ids", "services", "svcactions", "drpservices", "svcmon_log", "resmon_log",
 			"svcmon_log_ack", "checks_settings", "comp_log", "comp_log_daily",
 			"comp_rulesets_services", "comp_modulesets_services", "log",
 			"action_queue", "svc_tags", "form_output_results", "svcmon_log_last",

@@ -66,3 +66,12 @@ func TestServiceCascadeTablesHaveTheStatusLogs(t *testing.T) {
 		}
 	}
 }
+
+// TestServiceCascadeTablesDeleteTheServiceIDFirst checks the deletion of a
+// service deletes its service_ids row, before the others: a feed of the service
+// meanwhile then gives it a new svc_id instead of recreating the one deleted.
+func TestServiceCascadeTablesDeleteTheServiceIDFirst(t *testing.T) {
+	if len(serviceCascadeTables) == 0 || serviceCascadeTables[0] != "service_ids" {
+		t.Errorf("serviceCascadeTables starts with %v, want service_ids", serviceCascadeTables[:1])
+	}
+}

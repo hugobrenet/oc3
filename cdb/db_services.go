@@ -308,7 +308,14 @@ func (oDb *DB) InsertService(ctx context.Context, svcID, svcname, clusterID, svc
 // DeleteServiceCascade deletes a service and all its related data
 // serviceCascadeTables are the tables holding rows of a service, which its
 // deletion empties of them.
+//
+// service_ids comes first: the feed of a service still reported meanwhile then
+// gives it a new svc_id, while a service_ids row deleted after the services
+// row would let that feed recreate the service with the svc_id being deleted.
+// Left behind, the service_ids rows of the purged services, of short lived
+// clusters for instance, would pile up forever.
 var serviceCascadeTables = []string{
+	"service_ids",
 	"services",
 	"drpservices",
 	"checks_settings",

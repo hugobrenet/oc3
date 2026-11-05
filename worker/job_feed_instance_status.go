@@ -132,6 +132,9 @@ func (d *jobFeedInstanceStatus) findObjectFromDb(ctx context.Context) error {
 		return fmt.Errorf("findFromDb: object %s: %w", d.objectID, err)
 	} else if obj == nil {
 		return fmt.Errorf("findFromDb: object %s: not found", d.objectID)
+	} else if obj.Svcname == "" {
+		// repaired by the next daemon status of its cluster, see ObjectCreate
+		return fmt.Errorf("findFromDb: object %s: service row without svcname", d.objectID)
 	} else {
 		d.obj = obj
 	}
