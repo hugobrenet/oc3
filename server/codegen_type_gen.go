@@ -17,6 +17,42 @@ const (
 	BearerAuthScopes bearerAuthContextKey = "bearerAuth.Scopes"
 )
 
+// Defines values for AIBackend.
+const (
+	Oc3 AIBackend = "oc3"
+	Om3 AIBackend = "om3"
+)
+
+// Valid indicates whether the value is a known member of the AIBackend enum.
+func (e AIBackend) Valid() bool {
+	switch e {
+	case Oc3:
+		return true
+	case Om3:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AIResourceInputMimeType.
+const (
+	Textmarkdown AIResourceInputMimeType = "text/markdown"
+	Textplain    AIResourceInputMimeType = "text/plain"
+)
+
+// Valid indicates whether the value is a known member of the AIResourceInputMimeType enum.
+func (e AIResourceInputMimeType) Valid() bool {
+	switch e {
+	case Textmarkdown:
+		return true
+	case Textplain:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AssistantFeedbackRating.
 const (
 	AssistantFeedbackRatingDown AssistantFeedbackRating = "down"
@@ -1677,6 +1713,124 @@ func (e GetWorkflowsParamsAssigned) Valid() bool {
 	default:
 		return false
 	}
+}
+
+// AIBackend an AI backend of the agent, om3 for a cluster, oc3 for the collector
+type AIBackend string
+
+// AIResource defines model for AIResource.
+type AIResource struct {
+	Backends    []AIBackend `json:"backends"`
+	Body        string      `json:"body"`
+	Description string      `json:"description"`
+
+	// Digest sha256:<hex> of the bytes of the body
+	Digest       string `json:"digest"`
+	MimeType     string `json:"mime_type"`
+	Name         string `json:"name"`
+	Publications []int  `json:"publications"`
+
+	// Size the bytes of the body
+	Size    int       `json:"size"`
+	Title   string    `json:"title"`
+	Updated time.Time `json:"updated"`
+}
+
+// AIResourceInput defines model for AIResourceInput.
+type AIResourceInput struct {
+	Backends []AIBackend `json:"backends"`
+
+	// Body the text, valid UTF-8, at most 65536 bytes, no NUL byte
+	Body string `json:"body"`
+
+	// Description what the text holds and when to read it, at most 1024 bytes; the model reads it to decide
+	Description string `json:"description"`
+
+	// MimeType text/markdown by default
+	MimeType *AIResourceInputMimeType `json:"mime_type,omitempty"`
+
+	// Name the name of the resource, ^[a-z0-9]+(-[a-z0-9]+)*$, at most 64 bytes; required to create it, ignored on a replace
+	Name *string `json:"name,omitempty"`
+
+	// Publications the ids of the groups that may read it; empty, everybody
+	Publications *[]int `json:"publications,omitempty"`
+
+	// Title a title on one line, at most 128 bytes
+	Title *string `json:"title,omitempty"`
+}
+
+// AIResourceInputMimeType text/markdown by default
+type AIResourceInputMimeType string
+
+// AIResourceListResponse defines model for AIResourceListResponse.
+type AIResourceListResponse struct {
+	Data []AIResourceMeta `json:"data"`
+}
+
+// AIResourceMeta defines model for AIResourceMeta.
+type AIResourceMeta struct {
+	Backends    []AIBackend `json:"backends"`
+	Description string      `json:"description"`
+
+	// Digest sha256:<hex> of the bytes of the body
+	Digest       string `json:"digest"`
+	MimeType     string `json:"mime_type"`
+	Name         string `json:"name"`
+	Publications []int  `json:"publications"`
+
+	// Size the bytes of the body
+	Size    int       `json:"size"`
+	Title   string    `json:"title"`
+	Updated time.Time `json:"updated"`
+}
+
+// AISkill defines model for AISkill.
+type AISkill struct {
+	Backends []AIBackend `json:"backends"`
+	Body     string      `json:"body"`
+	Digest   string      `json:"digest"`
+
+	// Frontmatter the frontmatter as written, its values strings or maps of strings
+	Frontmatter  map[string]interface{} `json:"frontmatter"`
+	Name         string                 `json:"name"`
+	Publications []int                  `json:"publications"`
+	Size         int                    `json:"size"`
+	Updated      time.Time              `json:"updated"`
+}
+
+// AISkillInput defines model for AISkillInput.
+type AISkillInput struct {
+	Backends []AIBackend `json:"backends"`
+
+	// Body the whole SKILL.md, at most 65536 bytes: a YAML frontmatter between two ---
+	// lines that start it, whose name equals the name of the skill, whose
+	// description is at most 1024 bytes, whose values are strings or a map of
+	// strings on one level, metadata.opensvc/tools naming at most 24 tools
+	Body string `json:"body"`
+
+	// Name the name of the skill, the name of its frontmatter too; required to create it, ignored on a replace
+	Name *string `json:"name,omitempty"`
+
+	// Publications the ids of the groups that may read it; empty, everybody
+	Publications *[]int `json:"publications,omitempty"`
+}
+
+// AISkillListResponse defines model for AISkillListResponse.
+type AISkillListResponse struct {
+	Data []AISkillMeta `json:"data"`
+}
+
+// AISkillMeta defines model for AISkillMeta.
+type AISkillMeta struct {
+	Backends []AIBackend `json:"backends"`
+	Digest   string      `json:"digest"`
+
+	// Frontmatter the frontmatter as written, its values strings or maps of strings
+	Frontmatter  map[string]interface{} `json:"frontmatter"`
+	Name         string                 `json:"name"`
+	Publications []int                  `json:"publications"`
+	Size         int                    `json:"size"`
+	Updated      time.Time              `json:"updated"`
 }
 
 // ActionEnqueue One action to enqueue with PUT /actions.
@@ -6449,6 +6603,9 @@ type Version struct {
 	Version string  `json:"version"`
 }
 
+// InPathAIName defines model for inPathAIName.
+type InPathAIName = string
+
 // InPathComplianceAgentName defines model for inPathComplianceAgentName.
 type InPathComplianceAgentName = string
 
@@ -6466,6 +6623,9 @@ type InPathOrchestrationRunId = int
 
 // InPathRsetId defines model for inPathRsetId.
 type InPathRsetId = string
+
+// InQueryAIBackend an AI backend of the agent, om3 for a cluster, oc3 for the collector
+type InQueryAIBackend = AIBackend
 
 // InQueryAgentPath defines model for inQueryAgentPath.
 type InQueryAgentPath = string
@@ -6728,6 +6888,30 @@ type DeleteAgentTagParams struct {
 type PostAgentTagParams struct {
 	// Path The object of the node, as namespace/kind/name. Default the node.
 	Path *InQueryAgentPath `form:"path,omitempty" json:"path,omitempty"`
+}
+
+// GetAIResourcesParams defines parameters for GetAIResources.
+type GetAIResourcesParams struct {
+	// Backend only the objects for this backend, as the MCP servers ask; all of them when absent
+	Backend *InQueryAIBackend `form:"backend,omitempty" json:"backend,omitempty"`
+}
+
+// GetAIResourceParams defines parameters for GetAIResource.
+type GetAIResourceParams struct {
+	// Backend only the objects for this backend, as the MCP servers ask; all of them when absent
+	Backend *InQueryAIBackend `form:"backend,omitempty" json:"backend,omitempty"`
+}
+
+// GetAISkillsParams defines parameters for GetAISkills.
+type GetAISkillsParams struct {
+	// Backend only the objects for this backend, as the MCP servers ask; all of them when absent
+	Backend *InQueryAIBackend `form:"backend,omitempty" json:"backend,omitempty"`
+}
+
+// GetAISkillParams defines parameters for GetAISkill.
+type GetAISkillParams struct {
+	// Backend only the objects for this backend, as the MCP servers ask; all of them when absent
+	Backend *InQueryAIBackend `form:"backend,omitempty" json:"backend,omitempty"`
 }
 
 // GetAlertEventParams defines parameters for GetAlertEvent.
@@ -15771,6 +15955,18 @@ type PostAgentTagsJSONRequestBody = TagAgentCreate
 
 // PostAgentTagJSONRequestBody defines body for PostAgentTag for application/json ContentType.
 type PostAgentTagJSONRequestBody = TagAgentAttach
+
+// PostAIResourcesJSONRequestBody defines body for PostAIResources for application/json ContentType.
+type PostAIResourcesJSONRequestBody = AIResourceInput
+
+// PutAIResourceJSONRequestBody defines body for PutAIResource for application/json ContentType.
+type PutAIResourceJSONRequestBody = AIResourceInput
+
+// PostAISkillsJSONRequestBody defines body for PostAISkills for application/json ContentType.
+type PostAISkillsJSONRequestBody = AISkillInput
+
+// PutAISkillJSONRequestBody defines body for PutAISkill for application/json ContentType.
+type PutAISkillJSONRequestBody = AISkillInput
 
 // DeleteAlertsJSONRequestBody defines body for DeleteAlerts for application/json ContentType.
 type DeleteAlertsJSONRequestBody DeleteAlertsJSONBody
