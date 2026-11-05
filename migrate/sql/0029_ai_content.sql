@@ -4,7 +4,9 @@
 -- on demand; a skill, one SKILL.md of the Agent Skills specification, its
 -- frontmatter kept as JSON. Each is for one or both backends of the agent,
 -- om3 and oc3, and is read by everybody, or only by the groups it is
--- published to when it has any.
+-- published to when it has any. A publication keeps the id of a group
+-- deleted since: the object stays hidden from all but the AIManagers until
+-- they publish it again, rather than becoming public.
 CREATE TABLE IF NOT EXISTS ai_resources (
   id INT NOT NULL AUTO_INCREMENT,
   name VARCHAR(64) NOT NULL,
@@ -49,7 +51,9 @@ CREATE TABLE IF NOT EXISTS ai_skills_publications (
   KEY k_ai_skills_publications_group (group_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- The privilege to write them, besides Manager.
+-- The privilege to write them, besides Manager. What an AIManager writes, the
+-- model reads for every user it is published to, as instructions: grant it as
+-- Manager is granted, not as an editorial role.
 INSERT INTO auth_group (role, description, privilege)
-  SELECT 'AIManager', 'Privilege to manage the resources and the skills of the AI assistant', 'T' FROM DUAL
+  SELECT 'AIManager', 'Privilege to write the resources and the skills of the AI assistant. The model reads them as instructions for every user they are published to: as writing the system prompt of other users, grant it as Manager.', 'T' FROM DUAL
   WHERE NOT EXISTS (SELECT 1 FROM auth_group WHERE role = 'AIManager');

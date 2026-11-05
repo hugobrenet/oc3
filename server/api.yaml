@@ -20924,8 +20924,11 @@ paths:
         List the resources of the AI assistant the caller may read, their metadata only,
         never their body, sorted by name. An AIManager or a Manager reads them all;
         the others, those published to none of the groups, or to one of theirs.
+        The publications of each are given to an AIManager or a Manager only.
         The answer carries an ETag: a request with If-None-Match set to it gets a 304
-        while the list it would read is the same.
+        while the list it would read is the same. It serves an administration
+        interface polling the list; the MCP servers read the list at each request
+        and keep nothing.
       parameters:
         - $ref: '#/components/parameters/inQueryAIBackend'
       tags:
@@ -20958,7 +20961,8 @@ paths:
       operationId: PostAIResources
       description: |
         Create a resource of the AI assistant. Its name must be unique among the resources.
-        Requires the AIManager or Manager privilege.
+        Requires the AIManager or Manager privilege. The model reads what an AIManager
+        writes as instructions, for every user it is published to.
       requestBody:
         required: true
         content:
@@ -21023,7 +21027,8 @@ paths:
       operationId: PutAIResource
       description: |
         Replace the writable fields of a resource of the AI assistant; its name stays.
-        Requires the AIManager or Manager privilege.
+        Requires the AIManager or Manager privilege. The model reads what an AIManager
+        writes as instructions, for every user it is published to.
       parameters:
         - $ref: '#/components/parameters/inPathAIName'
       requestBody:
@@ -21085,8 +21090,11 @@ paths:
         List the skills of the AI assistant the caller may read, their metadata only,
         never their body, sorted by name. An AIManager or a Manager reads them all;
         the others, those published to none of the groups, or to one of theirs.
+        The publications of each are given to an AIManager or a Manager only.
         The answer carries an ETag: a request with If-None-Match set to it gets a 304
-        while the list it would read is the same.
+        while the list it would read is the same. It serves an administration
+        interface polling the list; the MCP servers read the list at each request
+        and keep nothing.
       parameters:
         - $ref: '#/components/parameters/inQueryAIBackend'
       tags:
@@ -21119,7 +21127,8 @@ paths:
       operationId: PostAISkills
       description: |
         Create a skill of the AI assistant. Its name must be unique among the skills.
-        Requires the AIManager or Manager privilege.
+        Requires the AIManager or Manager privilege. The model reads what an AIManager
+        writes as instructions, for every user it is published to.
       requestBody:
         required: true
         content:
@@ -21184,7 +21193,8 @@ paths:
       operationId: PutAISkill
       description: |
         Replace the writable fields of a skill of the AI assistant; its name stays.
-        Requires the AIManager or Manager privilege.
+        Requires the AIManager or Manager privilege. The model reads what an AIManager
+        writes as instructions, for every user it is published to.
       parameters:
         - $ref: '#/components/parameters/inPathAIName'
       requestBody:
@@ -21365,7 +21375,7 @@ components:
 
     AIResourceMeta:
       type: object
-      required: [name, title, description, mime_type, backends, publications, size, digest, updated]
+      required: [name, title, description, mime_type, backends, size, digest, updated]
       properties:
         name:
           type: string
@@ -21381,6 +21391,7 @@ components:
             $ref: '#/components/schemas/AIBackend'
         publications:
           type: array
+          description: the ids of the groups that may read it, empty for everybody; given to an AIManager only
           items:
             type: integer
         size:
@@ -21437,7 +21448,7 @@ components:
 
     AISkillMeta:
       type: object
-      required: [name, backends, publications, frontmatter, size, digest, updated]
+      required: [name, backends, frontmatter, size, digest, updated]
       properties:
         name:
           type: string
@@ -21447,6 +21458,7 @@ components:
             $ref: '#/components/schemas/AIBackend'
         publications:
           type: array
+          description: the ids of the groups that may read it, empty for everybody; given to an AIManager only
           items:
             type: integer
         frontmatter:

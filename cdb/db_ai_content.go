@@ -159,10 +159,11 @@ func (oDb *DB) AIContents(ctx context.Context, kind AIContentKind, f AIContentFi
 	return items, pubs.Err()
 }
 
-// AIContentCount counts the objects of kind for backend.
-func (oDb *DB) AIContentCount(ctx context.Context, kind AIContentKind, backend string) (int, error) {
+// AIContentCount counts the objects of kind for backend, but the one named
+// except: a write replacing it counts the others.
+func (oDb *DB) AIContentCount(ctx context.Context, kind AIContentKind, backend, except string) (int, error) {
 	var n int
-	err := oDb.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+kind.table+" WHERE FIND_IN_SET(?, backends) > 0", backend).Scan(&n)
+	err := oDb.DB.QueryRowContext(ctx, "SELECT COUNT(*) FROM "+kind.table+" WHERE FIND_IN_SET(?, backends) > 0 AND name <> ?", backend, except).Scan(&n)
 	if err != nil {
 		return 0, fmt.Errorf("aiContentCount %s: %w", kind.table, err)
 	}
@@ -214,7 +215,9 @@ func (oDb *DB) MissingGroups(ctx context.Context, groups []int) ([]int, error) {
 	return missing, rows.Err()
 }
 
-// InsertAIContent creates an object of kind, with its publications.
+// InsertAIContent creates an object of kind, with its publications; call it
+// on a transaction, so that the object is never visible without them. It
+// gives ErrDuplicate when the name is taken.
 func (oDb *DB) InsertAIContent(ctx context.Context, kind AIContentKind, c AIContent) error {
 	var (
 		result sql.Result
@@ -229,6 +232,9 @@ func (oDb *DB) InsertAIContent(ctx context.Context, kind AIContentKind, c AICont
 			" (name, title, description, mime_type, backends, body, size, digest, updated, updated_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 			c.Name, c.Title, c.Description, c.MimeType, strings.Join(c.Backends, ","), c.Body, c.Size, c.Digest, c.Updated, c.UpdatedBy)
 	}
+	if isDuplicate(err) {
+		return ErrDuplicate
+	}
 	if err != nil {
 		return fmt.Errorf("insertAIContent %s: %w", kind.table, err)
 	}
@@ -236,11 +242,14 @@ func (oDb *DB) InsertAIContent(ctx context.Context, kind AIContentKind, c AICont
 	if err != nil {
 		return fmt.Errorf("insertAIContent %s: %w", kind.table, err)
 	}
-	return oDb.setAIPublications(ctx, kind, id, c.Publications)
+	oDb.SetChange(kind.table)
+	return oDb.insertAIPublications(ctx, kind, id, c.Publications)
 }
 
 // UpdateAIContent replaces the writable fields of the object of kind named
-// name, and its publications; found false when there is none.
+// name, and its publications; found false when there is none. Call it on a
+// transaction, so that no read sees the object between the deletion of its
+// publications and their insertion, published to everybody.
 func (oDb *DB) UpdateAIContent(ctx context.Context, kind AIContentKind, name string, c AIContent) (bool, error) {
 	id, found, err := oDb.AIContentID(ctx, kind, name)
 	if err != nil || !found {
@@ -258,33 +267,52 @@ func (oDb *DB) UpdateAIContent(ctx context.Context, kind AIContentKind, name str
 	if err != nil {
 		return true, fmt.Errorf("updateAIContent %s: %w", kind.table, err)
 	}
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM "+kind.publications+" WHERE "+kind.idColumn+" = ?", id); err != nil {
-		return true, fmt.Errorf("updateAIContent %s publications: %w", kind.table, err)
+	oDb.SetChange(kind.table)
+	if err := oDb.deleteAIPublications(ctx, kind, id); err != nil {
+		return true, err
 	}
-	return true, oDb.setAIPublications(ctx, kind, id, c.Publications)
+	return true, oDb.insertAIPublications(ctx, kind, id, c.Publications)
 }
 
 // DeleteAIContent deletes the object of kind named name, with its
-// publications; found false when there is none.
+// publications; found false when there is none. Call it on a transaction: the
+// object goes before its publications, so that it is never published to
+// everybody.
 func (oDb *DB) DeleteAIContent(ctx context.Context, kind AIContentKind, name string) (bool, error) {
 	id, found, err := oDb.AIContentID(ctx, kind, name)
 	if err != nil || !found {
 		return found, err
 	}
-	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM "+kind.publications+" WHERE "+kind.idColumn+" = ?", id); err != nil {
-		return true, fmt.Errorf("deleteAIContent %s publications: %w", kind.table, err)
-	}
 	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM "+kind.table+" WHERE id = ?", id); err != nil {
 		return true, fmt.Errorf("deleteAIContent %s: %w", kind.table, err)
 	}
-	return true, nil
+	oDb.SetChange(kind.table)
+	return true, oDb.deleteAIPublications(ctx, kind, id)
 }
 
-func (oDb *DB) setAIPublications(ctx context.Context, kind AIContentKind, id int64, groups []int) error {
-	for _, g := range groups {
-		if _, err := oDb.DB.ExecContext(ctx, "INSERT INTO "+kind.publications+" ("+kind.idColumn+", group_id) VALUES (?, ?)", id, g); err != nil {
-			return fmt.Errorf("setAIPublications %s: %w", kind.table, err)
-		}
+func (oDb *DB) deleteAIPublications(ctx context.Context, kind AIContentKind, id int64) error {
+	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM "+kind.publications+" WHERE "+kind.idColumn+" = ?", id); err != nil {
+		return fmt.Errorf("deleteAIPublications %s: %w", kind.table, err)
 	}
+	oDb.SetChange(kind.publications)
+	return nil
+}
+
+// insertAIPublications publishes the object id of kind to groups, in one
+// statement.
+func (oDb *DB) insertAIPublications(ctx context.Context, kind AIContentKind, id int64, groups []int) error {
+	if len(groups) == 0 {
+		return nil
+	}
+	values := make([]string, len(groups))
+	args := make([]any, 0, 2*len(groups))
+	for i, g := range groups {
+		values[i] = "(?, ?)"
+		args = append(args, id, g)
+	}
+	if _, err := oDb.DB.ExecContext(ctx, "INSERT INTO "+kind.publications+" ("+kind.idColumn+", group_id) VALUES "+strings.Join(values, ", "), args...); err != nil {
+		return fmt.Errorf("insertAIPublications %s: %w", kind.table, err)
+	}
+	oDb.SetChange(kind.publications)
 	return nil
 }

@@ -1725,10 +1725,12 @@ type AIResource struct {
 	Description string      `json:"description"`
 
 	// Digest sha256:<hex> of the bytes of the body
-	Digest       string `json:"digest"`
-	MimeType     string `json:"mime_type"`
-	Name         string `json:"name"`
-	Publications []int  `json:"publications"`
+	Digest   string `json:"digest"`
+	MimeType string `json:"mime_type"`
+	Name     string `json:"name"`
+
+	// Publications the ids of the groups that may read it, empty for everybody; given to an AIManager only
+	Publications *[]int `json:"publications,omitempty"`
 
 	// Size the bytes of the body
 	Size    int       `json:"size"`
@@ -1773,10 +1775,12 @@ type AIResourceMeta struct {
 	Description string      `json:"description"`
 
 	// Digest sha256:<hex> of the bytes of the body
-	Digest       string `json:"digest"`
-	MimeType     string `json:"mime_type"`
-	Name         string `json:"name"`
-	Publications []int  `json:"publications"`
+	Digest   string `json:"digest"`
+	MimeType string `json:"mime_type"`
+	Name     string `json:"name"`
+
+	// Publications the ids of the groups that may read it, empty for everybody; given to an AIManager only
+	Publications *[]int `json:"publications,omitempty"`
 
 	// Size the bytes of the body
 	Size    int       `json:"size"`
@@ -1791,11 +1795,13 @@ type AISkill struct {
 	Digest   string      `json:"digest"`
 
 	// Frontmatter the frontmatter as written, its values strings or maps of strings
-	Frontmatter  map[string]interface{} `json:"frontmatter"`
-	Name         string                 `json:"name"`
-	Publications []int                  `json:"publications"`
-	Size         int                    `json:"size"`
-	Updated      time.Time              `json:"updated"`
+	Frontmatter map[string]interface{} `json:"frontmatter"`
+	Name        string                 `json:"name"`
+
+	// Publications the ids of the groups that may read it, empty for everybody; given to an AIManager only
+	Publications *[]int    `json:"publications,omitempty"`
+	Size         int       `json:"size"`
+	Updated      time.Time `json:"updated"`
 }
 
 // AISkillInput defines model for AISkillInput.
@@ -1826,11 +1832,13 @@ type AISkillMeta struct {
 	Digest   string      `json:"digest"`
 
 	// Frontmatter the frontmatter as written, its values strings or maps of strings
-	Frontmatter  map[string]interface{} `json:"frontmatter"`
-	Name         string                 `json:"name"`
-	Publications []int                  `json:"publications"`
-	Size         int                    `json:"size"`
-	Updated      time.Time              `json:"updated"`
+	Frontmatter map[string]interface{} `json:"frontmatter"`
+	Name        string                 `json:"name"`
+
+	// Publications the ids of the groups that may read it, empty for everybody; given to an AIManager only
+	Publications *[]int    `json:"publications,omitempty"`
+	Size         int       `json:"size"`
+	Updated      time.Time `json:"updated"`
 }
 
 // ActionEnqueue One action to enqueue with PUT /actions.
