@@ -105,6 +105,7 @@ worker.fast:
     - "node_disk"
     - "object_config"
     - "san_switch"
+    - "array"
     - "system"
 ```
 
