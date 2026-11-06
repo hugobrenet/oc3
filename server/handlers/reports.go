@@ -108,6 +108,8 @@ func (a *Api) PostReports(c echo.Context) error {
 		}
 	}
 
+	a.reportCommit(ctx, c, log, reportKindReport, id, definition)
+
 	userEmail, _ := c.Get(XUserEmail).(string)
 	if logErr := odb.Log(ctx, cdb.LogEntry{
 		Action: "report.add",

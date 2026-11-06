@@ -5789,6 +5789,34 @@ type QuotaRow struct {
 	QuotaUsed    *int    `json:"quota_used,omitempty"`
 }
 
+// ReportExport Reports with the charts and the metrics they show, the ids replaced by the
+// names: report_name and chart_name entries in the definitions, metric_name
+// entries in the chart definitions and the report sections.
+type ReportExport struct {
+	Charts *[]struct {
+		ChartDefinition *map[string]interface{} `json:"chart_definition,omitempty"`
+		ChartName       string                  `json:"chart_name"`
+	} `json:"charts,omitempty"`
+	Metrics *[]struct {
+		MetricColInstanceIndex *int    `json:"metric_col_instance_index,omitempty"`
+		MetricColInstanceLabel *string `json:"metric_col_instance_label,omitempty"`
+		MetricColValueIndex    *int    `json:"metric_col_value_index,omitempty"`
+		MetricHistorize        *string `json:"metric_historize,omitempty"`
+		MetricName             string  `json:"metric_name"`
+		MetricSql              *string `json:"metric_sql,omitempty"`
+	} `json:"metrics,omitempty"`
+	Reports *[]struct {
+		ReportDefinition *map[string]interface{} `json:"report_definition,omitempty"`
+		ReportName       string                  `json:"report_name"`
+	} `json:"reports,omitempty"`
+}
+
+// ReportImportResponse defines model for ReportImportResponse.
+type ReportImportResponse struct {
+	Error []string `json:"error"`
+	Info  []string `json:"info"`
+}
+
 // ReportListResponse defines model for ReportListResponse.
 type ReportListResponse struct {
 	Data ReportListResponse_Data `json:"data"`
@@ -8082,6 +8110,17 @@ type PostAuthNodeJSONBody struct {
 	Uuid *string `json:"uuid,omitempty"`
 }
 
+// DeleteChartsJSONBody defines parameters for DeleteCharts.
+type DeleteChartsJSONBody struct {
+	union json.RawMessage
+}
+
+// DeleteChartsJSONBody0 defines parameters for DeleteCharts.
+type DeleteChartsJSONBody0 map[string]interface{}
+
+// DeleteChartsJSONBody1 defines parameters for DeleteCharts.
+type DeleteChartsJSONBody1 = []map[string]interface{}
+
 // GetChartsParams defines parameters for GetCharts.
 type GetChartsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -8153,11 +8192,182 @@ type GetChartParams struct {
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 }
 
+// PostChartJSONBody defines parameters for PostChart.
+type PostChartJSONBody struct {
+	// ChartName New unique name of the chart.
+	ChartName *string `json:"chart_name,omitempty"`
+
+	// ChartYaml New definition of the chart, in YAML, recorded in its history.
+	ChartYaml *string `json:"chart_yaml,omitempty"`
+}
+
+// GetChartDiffParams defines parameters for GetChartDiff.
+type GetChartDiffParams struct {
+	// Other Another revision to compare cid with
+	Other *string `form:"other,omitempty" json:"other,omitempty"`
+}
+
+// GetChartPublicationsParams defines parameters for GetChartPublications.
+type GetChartPublicationsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// GetChartResponsiblesParams defines parameters for GetChartResponsibles.
+type GetChartResponsiblesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
 // GetChartSamplesParams defines parameters for GetChartSamples.
 type GetChartSamplesParams struct {
 	// Days Days of history, 365 by default, 1825 at most.
 	Days *int `form:"days,omitempty" json:"days,omitempty"`
 }
+
+// DeleteChartsPublicationsJSONBody defines parameters for DeleteChartsPublications.
+type DeleteChartsPublicationsJSONBody struct {
+	union json.RawMessage
+}
+
+// DeleteChartsPublicationsJSONBody0 defines parameters for DeleteChartsPublications.
+type DeleteChartsPublicationsJSONBody0 map[string]interface{}
+
+// DeleteChartsPublicationsJSONBody1 defines parameters for DeleteChartsPublications.
+type DeleteChartsPublicationsJSONBody1 = []map[string]interface{}
+
+// PostChartsPublicationsJSONBody defines parameters for PostChartsPublications.
+type PostChartsPublicationsJSONBody struct {
+	union json.RawMessage
+}
+
+// PostChartsPublicationsJSONBody0 defines parameters for PostChartsPublications.
+type PostChartsPublicationsJSONBody0 map[string]interface{}
+
+// PostChartsPublicationsJSONBody1 defines parameters for PostChartsPublications.
+type PostChartsPublicationsJSONBody1 = []map[string]interface{}
+
+// DeleteChartsResponsiblesJSONBody defines parameters for DeleteChartsResponsibles.
+type DeleteChartsResponsiblesJSONBody struct {
+	union json.RawMessage
+}
+
+// DeleteChartsResponsiblesJSONBody0 defines parameters for DeleteChartsResponsibles.
+type DeleteChartsResponsiblesJSONBody0 map[string]interface{}
+
+// DeleteChartsResponsiblesJSONBody1 defines parameters for DeleteChartsResponsibles.
+type DeleteChartsResponsiblesJSONBody1 = []map[string]interface{}
+
+// PostChartsResponsiblesJSONBody defines parameters for PostChartsResponsibles.
+type PostChartsResponsiblesJSONBody struct {
+	union json.RawMessage
+}
+
+// PostChartsResponsiblesJSONBody0 defines parameters for PostChartsResponsibles.
+type PostChartsResponsiblesJSONBody0 map[string]interface{}
+
+// PostChartsResponsiblesJSONBody1 defines parameters for PostChartsResponsibles.
+type PostChartsResponsiblesJSONBody1 = []map[string]interface{}
 
 // GetChecksContextualParams defines parameters for GetChecksContextual.
 type GetChecksContextualParams struct {
@@ -12083,6 +12293,17 @@ type GetLogParams struct {
 	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
 }
 
+// DeleteMetricsJSONBody defines parameters for DeleteMetrics.
+type DeleteMetricsJSONBody struct {
+	union json.RawMessage
+}
+
+// DeleteMetricsJSONBody0 defines parameters for DeleteMetrics.
+type DeleteMetricsJSONBody0 map[string]interface{}
+
+// DeleteMetricsJSONBody1 defines parameters for DeleteMetrics.
+type DeleteMetricsJSONBody1 = []map[string]interface{}
+
 // GetMetricsParams defines parameters for GetMetrics.
 type GetMetricsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -12198,6 +12419,90 @@ type PostMetricJSONBody struct {
 
 // PostMetricJSONBodyMetricHistorize defines parameters for PostMetric.
 type PostMetricJSONBodyMetricHistorize string
+
+// GetMetricDiffParams defines parameters for GetMetricDiff.
+type GetMetricDiffParams struct {
+	// Other Another revision to compare cid with
+	Other *string `form:"other,omitempty" json:"other,omitempty"`
+}
+
+// GetMetricPublicationsParams defines parameters for GetMetricPublications.
+type GetMetricPublicationsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// DeleteMetricsPublicationsJSONBody defines parameters for DeleteMetricsPublications.
+type DeleteMetricsPublicationsJSONBody struct {
+	union json.RawMessage
+}
+
+// DeleteMetricsPublicationsJSONBody0 defines parameters for DeleteMetricsPublications.
+type DeleteMetricsPublicationsJSONBody0 map[string]interface{}
+
+// DeleteMetricsPublicationsJSONBody1 defines parameters for DeleteMetricsPublications.
+type DeleteMetricsPublicationsJSONBody1 = []map[string]interface{}
+
+// PostMetricsPublicationsJSONBody defines parameters for PostMetricsPublications.
+type PostMetricsPublicationsJSONBody struct {
+	union json.RawMessage
+}
+
+// PostMetricsPublicationsJSONBody0 defines parameters for PostMetricsPublications.
+type PostMetricsPublicationsJSONBody0 map[string]interface{}
+
+// PostMetricsPublicationsJSONBody1 defines parameters for PostMetricsPublications.
+type PostMetricsPublicationsJSONBody1 = []map[string]interface{}
 
 // GetNetworksParams defines parameters for GetNetworks.
 type GetNetworksParams struct {
@@ -13882,6 +14187,17 @@ type GetQuotasParams struct {
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
+// DeleteReportsJSONBody defines parameters for DeleteReports.
+type DeleteReportsJSONBody struct {
+	union json.RawMessage
+}
+
+// DeleteReportsJSONBody0 defines parameters for DeleteReports.
+type DeleteReportsJSONBody0 map[string]interface{}
+
+// DeleteReportsJSONBody1 defines parameters for DeleteReports.
+type DeleteReportsJSONBody1 = []map[string]interface{}
+
 // GetReportsParams defines parameters for GetReports.
 type GetReportsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -13952,6 +14268,177 @@ type GetReportParams struct {
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 }
+
+// PostReportJSONBody defines parameters for PostReport.
+type PostReportJSONBody struct {
+	// ReportName New unique name of the report.
+	ReportName *string `json:"report_name,omitempty"`
+
+	// ReportYaml New definition of the report, in YAML, recorded in its history.
+	ReportYaml *string `json:"report_yaml,omitempty"`
+}
+
+// GetReportDiffParams defines parameters for GetReportDiff.
+type GetReportDiffParams struct {
+	// Other Another revision to compare cid with
+	Other *string `form:"other,omitempty" json:"other,omitempty"`
+}
+
+// GetReportPublicationsParams defines parameters for GetReportPublications.
+type GetReportPublicationsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// GetReportResponsiblesParams defines parameters for GetReportResponsibles.
+type GetReportResponsiblesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// DeleteReportsPublicationsJSONBody defines parameters for DeleteReportsPublications.
+type DeleteReportsPublicationsJSONBody struct {
+	union json.RawMessage
+}
+
+// DeleteReportsPublicationsJSONBody0 defines parameters for DeleteReportsPublications.
+type DeleteReportsPublicationsJSONBody0 map[string]interface{}
+
+// DeleteReportsPublicationsJSONBody1 defines parameters for DeleteReportsPublications.
+type DeleteReportsPublicationsJSONBody1 = []map[string]interface{}
+
+// PostReportsPublicationsJSONBody defines parameters for PostReportsPublications.
+type PostReportsPublicationsJSONBody struct {
+	union json.RawMessage
+}
+
+// PostReportsPublicationsJSONBody0 defines parameters for PostReportsPublications.
+type PostReportsPublicationsJSONBody0 map[string]interface{}
+
+// PostReportsPublicationsJSONBody1 defines parameters for PostReportsPublications.
+type PostReportsPublicationsJSONBody1 = []map[string]interface{}
+
+// DeleteReportsResponsiblesJSONBody defines parameters for DeleteReportsResponsibles.
+type DeleteReportsResponsiblesJSONBody struct {
+	union json.RawMessage
+}
+
+// DeleteReportsResponsiblesJSONBody0 defines parameters for DeleteReportsResponsibles.
+type DeleteReportsResponsiblesJSONBody0 map[string]interface{}
+
+// DeleteReportsResponsiblesJSONBody1 defines parameters for DeleteReportsResponsibles.
+type DeleteReportsResponsiblesJSONBody1 = []map[string]interface{}
+
+// PostReportsResponsiblesJSONBody defines parameters for PostReportsResponsibles.
+type PostReportsResponsiblesJSONBody struct {
+	union json.RawMessage
+}
+
+// PostReportsResponsiblesJSONBody0 defines parameters for PostReportsResponsibles.
+type PostReportsResponsiblesJSONBody0 map[string]interface{}
+
+// PostReportsResponsiblesJSONBody1 defines parameters for PostReportsResponsibles.
+type PostReportsResponsiblesJSONBody1 = []map[string]interface{}
 
 // GetResourcesParams defines parameters for GetResources.
 type GetResourcesParams struct {
@@ -16486,8 +16973,26 @@ type PostAuthBackchannelLogoutFormdataRequestBody PostAuthBackchannelLogoutFormd
 // PostAuthNodeJSONRequestBody defines body for PostAuthNode for application/json ContentType.
 type PostAuthNodeJSONRequestBody PostAuthNodeJSONBody
 
+// DeleteChartsJSONRequestBody defines body for DeleteCharts for application/json ContentType.
+type DeleteChartsJSONRequestBody DeleteChartsJSONBody
+
 // PostChartsJSONRequestBody defines body for PostCharts for application/json ContentType.
 type PostChartsJSONRequestBody PostChartsJSONBody
+
+// PostChartJSONRequestBody defines body for PostChart for application/json ContentType.
+type PostChartJSONRequestBody PostChartJSONBody
+
+// DeleteChartsPublicationsJSONRequestBody defines body for DeleteChartsPublications for application/json ContentType.
+type DeleteChartsPublicationsJSONRequestBody DeleteChartsPublicationsJSONBody
+
+// PostChartsPublicationsJSONRequestBody defines body for PostChartsPublications for application/json ContentType.
+type PostChartsPublicationsJSONRequestBody PostChartsPublicationsJSONBody
+
+// DeleteChartsResponsiblesJSONRequestBody defines body for DeleteChartsResponsibles for application/json ContentType.
+type DeleteChartsResponsiblesJSONRequestBody DeleteChartsResponsiblesJSONBody
+
+// PostChartsResponsiblesJSONRequestBody defines body for PostChartsResponsibles for application/json ContentType.
+type PostChartsResponsiblesJSONRequestBody PostChartsResponsiblesJSONBody
 
 // PostChecksContextualJSONRequestBody defines body for PostChecksContextual for application/json ContentType.
 type PostChecksContextualJSONRequestBody = CheckContextualRequest
@@ -16747,11 +17252,20 @@ type DeleteIpsJSONRequestBody DeleteIpsJSONBody
 // PostLogsJSONRequestBody defines body for PostLogs for application/json ContentType.
 type PostLogsJSONRequestBody PostLogsJSONBody
 
+// DeleteMetricsJSONRequestBody defines body for DeleteMetrics for application/json ContentType.
+type DeleteMetricsJSONRequestBody DeleteMetricsJSONBody
+
 // PostMetricsJSONRequestBody defines body for PostMetrics for application/json ContentType.
 type PostMetricsJSONRequestBody PostMetricsJSONBody
 
 // PostMetricJSONRequestBody defines body for PostMetric for application/json ContentType.
 type PostMetricJSONRequestBody PostMetricJSONBody
+
+// DeleteMetricsPublicationsJSONRequestBody defines body for DeleteMetricsPublications for application/json ContentType.
+type DeleteMetricsPublicationsJSONRequestBody DeleteMetricsPublicationsJSONBody
+
+// PostMetricsPublicationsJSONRequestBody defines body for PostMetricsPublications for application/json ContentType.
+type PostMetricsPublicationsJSONRequestBody PostMetricsPublicationsJSONBody
 
 // PostNetworksJSONRequestBody defines body for PostNetworks for application/json ContentType.
 type PostNetworksJSONRequestBody PostNetworksJSONBody
@@ -16819,8 +17333,29 @@ type PostOrchestrationCheckJSONRequestBody = OrchestrationInput
 // PutOrchestrationJSONRequestBody defines body for PutOrchestration for application/json ContentType.
 type PutOrchestrationJSONRequestBody = OrchestrationInput
 
+// DeleteReportsJSONRequestBody defines body for DeleteReports for application/json ContentType.
+type DeleteReportsJSONRequestBody DeleteReportsJSONBody
+
 // PostReportsJSONRequestBody defines body for PostReports for application/json ContentType.
 type PostReportsJSONRequestBody PostReportsJSONBody
+
+// PostReportsImportJSONRequestBody defines body for PostReportsImport for application/json ContentType.
+type PostReportsImportJSONRequestBody = ReportExport
+
+// PostReportJSONRequestBody defines body for PostReport for application/json ContentType.
+type PostReportJSONRequestBody PostReportJSONBody
+
+// DeleteReportsPublicationsJSONRequestBody defines body for DeleteReportsPublications for application/json ContentType.
+type DeleteReportsPublicationsJSONRequestBody DeleteReportsPublicationsJSONBody
+
+// PostReportsPublicationsJSONRequestBody defines body for PostReportsPublications for application/json ContentType.
+type PostReportsPublicationsJSONRequestBody PostReportsPublicationsJSONBody
+
+// DeleteReportsResponsiblesJSONRequestBody defines body for DeleteReportsResponsibles for application/json ContentType.
+type DeleteReportsResponsiblesJSONRequestBody DeleteReportsResponsiblesJSONBody
+
+// PostReportsResponsiblesJSONRequestBody defines body for PostReportsResponsibles for application/json ContentType.
+type PostReportsResponsiblesJSONRequestBody PostReportsResponsiblesJSONBody
 
 // PostSafeFileJSONRequestBody defines body for PostSafeFile for application/json ContentType.
 type PostSafeFileJSONRequestBody PostSafeFileJSONBody
@@ -20588,6 +21123,316 @@ func (t *PutActions200JSONResponseBody) UnmarshalJSON(b []byte) error {
 	return err
 }
 
+// AsDeleteChartsJSONBody0 returns the union data inside the DeleteChartsJSONBody as a DeleteChartsJSONBody0
+func (t DeleteChartsJSONBody) AsDeleteChartsJSONBody0() (DeleteChartsJSONBody0, error) {
+	var body DeleteChartsJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteChartsJSONBody0 overwrites any union data inside the DeleteChartsJSONBody as the provided DeleteChartsJSONBody0
+func (t *DeleteChartsJSONBody) FromDeleteChartsJSONBody0(v DeleteChartsJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteChartsJSONBody0 performs a merge with any union data inside the DeleteChartsJSONBody, using the provided DeleteChartsJSONBody0
+func (t *DeleteChartsJSONBody) MergeDeleteChartsJSONBody0(v DeleteChartsJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDeleteChartsJSONBody1 returns the union data inside the DeleteChartsJSONBody as a DeleteChartsJSONBody1
+func (t DeleteChartsJSONBody) AsDeleteChartsJSONBody1() (DeleteChartsJSONBody1, error) {
+	var body DeleteChartsJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteChartsJSONBody1 overwrites any union data inside the DeleteChartsJSONBody as the provided DeleteChartsJSONBody1
+func (t *DeleteChartsJSONBody) FromDeleteChartsJSONBody1(v DeleteChartsJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteChartsJSONBody1 performs a merge with any union data inside the DeleteChartsJSONBody, using the provided DeleteChartsJSONBody1
+func (t *DeleteChartsJSONBody) MergeDeleteChartsJSONBody1(v DeleteChartsJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DeleteChartsJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *DeleteChartsJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsDeleteChartsPublicationsJSONBody0 returns the union data inside the DeleteChartsPublicationsJSONBody as a DeleteChartsPublicationsJSONBody0
+func (t DeleteChartsPublicationsJSONBody) AsDeleteChartsPublicationsJSONBody0() (DeleteChartsPublicationsJSONBody0, error) {
+	var body DeleteChartsPublicationsJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteChartsPublicationsJSONBody0 overwrites any union data inside the DeleteChartsPublicationsJSONBody as the provided DeleteChartsPublicationsJSONBody0
+func (t *DeleteChartsPublicationsJSONBody) FromDeleteChartsPublicationsJSONBody0(v DeleteChartsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteChartsPublicationsJSONBody0 performs a merge with any union data inside the DeleteChartsPublicationsJSONBody, using the provided DeleteChartsPublicationsJSONBody0
+func (t *DeleteChartsPublicationsJSONBody) MergeDeleteChartsPublicationsJSONBody0(v DeleteChartsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDeleteChartsPublicationsJSONBody1 returns the union data inside the DeleteChartsPublicationsJSONBody as a DeleteChartsPublicationsJSONBody1
+func (t DeleteChartsPublicationsJSONBody) AsDeleteChartsPublicationsJSONBody1() (DeleteChartsPublicationsJSONBody1, error) {
+	var body DeleteChartsPublicationsJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteChartsPublicationsJSONBody1 overwrites any union data inside the DeleteChartsPublicationsJSONBody as the provided DeleteChartsPublicationsJSONBody1
+func (t *DeleteChartsPublicationsJSONBody) FromDeleteChartsPublicationsJSONBody1(v DeleteChartsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteChartsPublicationsJSONBody1 performs a merge with any union data inside the DeleteChartsPublicationsJSONBody, using the provided DeleteChartsPublicationsJSONBody1
+func (t *DeleteChartsPublicationsJSONBody) MergeDeleteChartsPublicationsJSONBody1(v DeleteChartsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DeleteChartsPublicationsJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *DeleteChartsPublicationsJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsPostChartsPublicationsJSONBody0 returns the union data inside the PostChartsPublicationsJSONBody as a PostChartsPublicationsJSONBody0
+func (t PostChartsPublicationsJSONBody) AsPostChartsPublicationsJSONBody0() (PostChartsPublicationsJSONBody0, error) {
+	var body PostChartsPublicationsJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostChartsPublicationsJSONBody0 overwrites any union data inside the PostChartsPublicationsJSONBody as the provided PostChartsPublicationsJSONBody0
+func (t *PostChartsPublicationsJSONBody) FromPostChartsPublicationsJSONBody0(v PostChartsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostChartsPublicationsJSONBody0 performs a merge with any union data inside the PostChartsPublicationsJSONBody, using the provided PostChartsPublicationsJSONBody0
+func (t *PostChartsPublicationsJSONBody) MergePostChartsPublicationsJSONBody0(v PostChartsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPostChartsPublicationsJSONBody1 returns the union data inside the PostChartsPublicationsJSONBody as a PostChartsPublicationsJSONBody1
+func (t PostChartsPublicationsJSONBody) AsPostChartsPublicationsJSONBody1() (PostChartsPublicationsJSONBody1, error) {
+	var body PostChartsPublicationsJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostChartsPublicationsJSONBody1 overwrites any union data inside the PostChartsPublicationsJSONBody as the provided PostChartsPublicationsJSONBody1
+func (t *PostChartsPublicationsJSONBody) FromPostChartsPublicationsJSONBody1(v PostChartsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostChartsPublicationsJSONBody1 performs a merge with any union data inside the PostChartsPublicationsJSONBody, using the provided PostChartsPublicationsJSONBody1
+func (t *PostChartsPublicationsJSONBody) MergePostChartsPublicationsJSONBody1(v PostChartsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PostChartsPublicationsJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PostChartsPublicationsJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsDeleteChartsResponsiblesJSONBody0 returns the union data inside the DeleteChartsResponsiblesJSONBody as a DeleteChartsResponsiblesJSONBody0
+func (t DeleteChartsResponsiblesJSONBody) AsDeleteChartsResponsiblesJSONBody0() (DeleteChartsResponsiblesJSONBody0, error) {
+	var body DeleteChartsResponsiblesJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteChartsResponsiblesJSONBody0 overwrites any union data inside the DeleteChartsResponsiblesJSONBody as the provided DeleteChartsResponsiblesJSONBody0
+func (t *DeleteChartsResponsiblesJSONBody) FromDeleteChartsResponsiblesJSONBody0(v DeleteChartsResponsiblesJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteChartsResponsiblesJSONBody0 performs a merge with any union data inside the DeleteChartsResponsiblesJSONBody, using the provided DeleteChartsResponsiblesJSONBody0
+func (t *DeleteChartsResponsiblesJSONBody) MergeDeleteChartsResponsiblesJSONBody0(v DeleteChartsResponsiblesJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDeleteChartsResponsiblesJSONBody1 returns the union data inside the DeleteChartsResponsiblesJSONBody as a DeleteChartsResponsiblesJSONBody1
+func (t DeleteChartsResponsiblesJSONBody) AsDeleteChartsResponsiblesJSONBody1() (DeleteChartsResponsiblesJSONBody1, error) {
+	var body DeleteChartsResponsiblesJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteChartsResponsiblesJSONBody1 overwrites any union data inside the DeleteChartsResponsiblesJSONBody as the provided DeleteChartsResponsiblesJSONBody1
+func (t *DeleteChartsResponsiblesJSONBody) FromDeleteChartsResponsiblesJSONBody1(v DeleteChartsResponsiblesJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteChartsResponsiblesJSONBody1 performs a merge with any union data inside the DeleteChartsResponsiblesJSONBody, using the provided DeleteChartsResponsiblesJSONBody1
+func (t *DeleteChartsResponsiblesJSONBody) MergeDeleteChartsResponsiblesJSONBody1(v DeleteChartsResponsiblesJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DeleteChartsResponsiblesJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *DeleteChartsResponsiblesJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsPostChartsResponsiblesJSONBody0 returns the union data inside the PostChartsResponsiblesJSONBody as a PostChartsResponsiblesJSONBody0
+func (t PostChartsResponsiblesJSONBody) AsPostChartsResponsiblesJSONBody0() (PostChartsResponsiblesJSONBody0, error) {
+	var body PostChartsResponsiblesJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostChartsResponsiblesJSONBody0 overwrites any union data inside the PostChartsResponsiblesJSONBody as the provided PostChartsResponsiblesJSONBody0
+func (t *PostChartsResponsiblesJSONBody) FromPostChartsResponsiblesJSONBody0(v PostChartsResponsiblesJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostChartsResponsiblesJSONBody0 performs a merge with any union data inside the PostChartsResponsiblesJSONBody, using the provided PostChartsResponsiblesJSONBody0
+func (t *PostChartsResponsiblesJSONBody) MergePostChartsResponsiblesJSONBody0(v PostChartsResponsiblesJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPostChartsResponsiblesJSONBody1 returns the union data inside the PostChartsResponsiblesJSONBody as a PostChartsResponsiblesJSONBody1
+func (t PostChartsResponsiblesJSONBody) AsPostChartsResponsiblesJSONBody1() (PostChartsResponsiblesJSONBody1, error) {
+	var body PostChartsResponsiblesJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostChartsResponsiblesJSONBody1 overwrites any union data inside the PostChartsResponsiblesJSONBody as the provided PostChartsResponsiblesJSONBody1
+func (t *PostChartsResponsiblesJSONBody) FromPostChartsResponsiblesJSONBody1(v PostChartsResponsiblesJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostChartsResponsiblesJSONBody1 performs a merge with any union data inside the PostChartsResponsiblesJSONBody, using the provided PostChartsResponsiblesJSONBody1
+func (t *PostChartsResponsiblesJSONBody) MergePostChartsResponsiblesJSONBody1(v PostChartsResponsiblesJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PostChartsResponsiblesJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PostChartsResponsiblesJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
 // AsDeleteFormsJSONBody0 returns the union data inside the DeleteFormsJSONBody as a DeleteFormsJSONBody0
 func (t DeleteFormsJSONBody) AsDeleteFormsJSONBody0() (DeleteFormsJSONBody0, error) {
 	var body DeleteFormsJSONBody0
@@ -20956,6 +21801,502 @@ func (t PostFormsResponsiblesJSONBody) MarshalJSON() ([]byte, error) {
 }
 
 func (t *PostFormsResponsiblesJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsDeleteMetricsJSONBody0 returns the union data inside the DeleteMetricsJSONBody as a DeleteMetricsJSONBody0
+func (t DeleteMetricsJSONBody) AsDeleteMetricsJSONBody0() (DeleteMetricsJSONBody0, error) {
+	var body DeleteMetricsJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteMetricsJSONBody0 overwrites any union data inside the DeleteMetricsJSONBody as the provided DeleteMetricsJSONBody0
+func (t *DeleteMetricsJSONBody) FromDeleteMetricsJSONBody0(v DeleteMetricsJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteMetricsJSONBody0 performs a merge with any union data inside the DeleteMetricsJSONBody, using the provided DeleteMetricsJSONBody0
+func (t *DeleteMetricsJSONBody) MergeDeleteMetricsJSONBody0(v DeleteMetricsJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDeleteMetricsJSONBody1 returns the union data inside the DeleteMetricsJSONBody as a DeleteMetricsJSONBody1
+func (t DeleteMetricsJSONBody) AsDeleteMetricsJSONBody1() (DeleteMetricsJSONBody1, error) {
+	var body DeleteMetricsJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteMetricsJSONBody1 overwrites any union data inside the DeleteMetricsJSONBody as the provided DeleteMetricsJSONBody1
+func (t *DeleteMetricsJSONBody) FromDeleteMetricsJSONBody1(v DeleteMetricsJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteMetricsJSONBody1 performs a merge with any union data inside the DeleteMetricsJSONBody, using the provided DeleteMetricsJSONBody1
+func (t *DeleteMetricsJSONBody) MergeDeleteMetricsJSONBody1(v DeleteMetricsJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DeleteMetricsJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *DeleteMetricsJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsDeleteMetricsPublicationsJSONBody0 returns the union data inside the DeleteMetricsPublicationsJSONBody as a DeleteMetricsPublicationsJSONBody0
+func (t DeleteMetricsPublicationsJSONBody) AsDeleteMetricsPublicationsJSONBody0() (DeleteMetricsPublicationsJSONBody0, error) {
+	var body DeleteMetricsPublicationsJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteMetricsPublicationsJSONBody0 overwrites any union data inside the DeleteMetricsPublicationsJSONBody as the provided DeleteMetricsPublicationsJSONBody0
+func (t *DeleteMetricsPublicationsJSONBody) FromDeleteMetricsPublicationsJSONBody0(v DeleteMetricsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteMetricsPublicationsJSONBody0 performs a merge with any union data inside the DeleteMetricsPublicationsJSONBody, using the provided DeleteMetricsPublicationsJSONBody0
+func (t *DeleteMetricsPublicationsJSONBody) MergeDeleteMetricsPublicationsJSONBody0(v DeleteMetricsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDeleteMetricsPublicationsJSONBody1 returns the union data inside the DeleteMetricsPublicationsJSONBody as a DeleteMetricsPublicationsJSONBody1
+func (t DeleteMetricsPublicationsJSONBody) AsDeleteMetricsPublicationsJSONBody1() (DeleteMetricsPublicationsJSONBody1, error) {
+	var body DeleteMetricsPublicationsJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteMetricsPublicationsJSONBody1 overwrites any union data inside the DeleteMetricsPublicationsJSONBody as the provided DeleteMetricsPublicationsJSONBody1
+func (t *DeleteMetricsPublicationsJSONBody) FromDeleteMetricsPublicationsJSONBody1(v DeleteMetricsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteMetricsPublicationsJSONBody1 performs a merge with any union data inside the DeleteMetricsPublicationsJSONBody, using the provided DeleteMetricsPublicationsJSONBody1
+func (t *DeleteMetricsPublicationsJSONBody) MergeDeleteMetricsPublicationsJSONBody1(v DeleteMetricsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DeleteMetricsPublicationsJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *DeleteMetricsPublicationsJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsPostMetricsPublicationsJSONBody0 returns the union data inside the PostMetricsPublicationsJSONBody as a PostMetricsPublicationsJSONBody0
+func (t PostMetricsPublicationsJSONBody) AsPostMetricsPublicationsJSONBody0() (PostMetricsPublicationsJSONBody0, error) {
+	var body PostMetricsPublicationsJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostMetricsPublicationsJSONBody0 overwrites any union data inside the PostMetricsPublicationsJSONBody as the provided PostMetricsPublicationsJSONBody0
+func (t *PostMetricsPublicationsJSONBody) FromPostMetricsPublicationsJSONBody0(v PostMetricsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostMetricsPublicationsJSONBody0 performs a merge with any union data inside the PostMetricsPublicationsJSONBody, using the provided PostMetricsPublicationsJSONBody0
+func (t *PostMetricsPublicationsJSONBody) MergePostMetricsPublicationsJSONBody0(v PostMetricsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPostMetricsPublicationsJSONBody1 returns the union data inside the PostMetricsPublicationsJSONBody as a PostMetricsPublicationsJSONBody1
+func (t PostMetricsPublicationsJSONBody) AsPostMetricsPublicationsJSONBody1() (PostMetricsPublicationsJSONBody1, error) {
+	var body PostMetricsPublicationsJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostMetricsPublicationsJSONBody1 overwrites any union data inside the PostMetricsPublicationsJSONBody as the provided PostMetricsPublicationsJSONBody1
+func (t *PostMetricsPublicationsJSONBody) FromPostMetricsPublicationsJSONBody1(v PostMetricsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostMetricsPublicationsJSONBody1 performs a merge with any union data inside the PostMetricsPublicationsJSONBody, using the provided PostMetricsPublicationsJSONBody1
+func (t *PostMetricsPublicationsJSONBody) MergePostMetricsPublicationsJSONBody1(v PostMetricsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PostMetricsPublicationsJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PostMetricsPublicationsJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsDeleteReportsJSONBody0 returns the union data inside the DeleteReportsJSONBody as a DeleteReportsJSONBody0
+func (t DeleteReportsJSONBody) AsDeleteReportsJSONBody0() (DeleteReportsJSONBody0, error) {
+	var body DeleteReportsJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteReportsJSONBody0 overwrites any union data inside the DeleteReportsJSONBody as the provided DeleteReportsJSONBody0
+func (t *DeleteReportsJSONBody) FromDeleteReportsJSONBody0(v DeleteReportsJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteReportsJSONBody0 performs a merge with any union data inside the DeleteReportsJSONBody, using the provided DeleteReportsJSONBody0
+func (t *DeleteReportsJSONBody) MergeDeleteReportsJSONBody0(v DeleteReportsJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDeleteReportsJSONBody1 returns the union data inside the DeleteReportsJSONBody as a DeleteReportsJSONBody1
+func (t DeleteReportsJSONBody) AsDeleteReportsJSONBody1() (DeleteReportsJSONBody1, error) {
+	var body DeleteReportsJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteReportsJSONBody1 overwrites any union data inside the DeleteReportsJSONBody as the provided DeleteReportsJSONBody1
+func (t *DeleteReportsJSONBody) FromDeleteReportsJSONBody1(v DeleteReportsJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteReportsJSONBody1 performs a merge with any union data inside the DeleteReportsJSONBody, using the provided DeleteReportsJSONBody1
+func (t *DeleteReportsJSONBody) MergeDeleteReportsJSONBody1(v DeleteReportsJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DeleteReportsJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *DeleteReportsJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsDeleteReportsPublicationsJSONBody0 returns the union data inside the DeleteReportsPublicationsJSONBody as a DeleteReportsPublicationsJSONBody0
+func (t DeleteReportsPublicationsJSONBody) AsDeleteReportsPublicationsJSONBody0() (DeleteReportsPublicationsJSONBody0, error) {
+	var body DeleteReportsPublicationsJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteReportsPublicationsJSONBody0 overwrites any union data inside the DeleteReportsPublicationsJSONBody as the provided DeleteReportsPublicationsJSONBody0
+func (t *DeleteReportsPublicationsJSONBody) FromDeleteReportsPublicationsJSONBody0(v DeleteReportsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteReportsPublicationsJSONBody0 performs a merge with any union data inside the DeleteReportsPublicationsJSONBody, using the provided DeleteReportsPublicationsJSONBody0
+func (t *DeleteReportsPublicationsJSONBody) MergeDeleteReportsPublicationsJSONBody0(v DeleteReportsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDeleteReportsPublicationsJSONBody1 returns the union data inside the DeleteReportsPublicationsJSONBody as a DeleteReportsPublicationsJSONBody1
+func (t DeleteReportsPublicationsJSONBody) AsDeleteReportsPublicationsJSONBody1() (DeleteReportsPublicationsJSONBody1, error) {
+	var body DeleteReportsPublicationsJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteReportsPublicationsJSONBody1 overwrites any union data inside the DeleteReportsPublicationsJSONBody as the provided DeleteReportsPublicationsJSONBody1
+func (t *DeleteReportsPublicationsJSONBody) FromDeleteReportsPublicationsJSONBody1(v DeleteReportsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteReportsPublicationsJSONBody1 performs a merge with any union data inside the DeleteReportsPublicationsJSONBody, using the provided DeleteReportsPublicationsJSONBody1
+func (t *DeleteReportsPublicationsJSONBody) MergeDeleteReportsPublicationsJSONBody1(v DeleteReportsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DeleteReportsPublicationsJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *DeleteReportsPublicationsJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsPostReportsPublicationsJSONBody0 returns the union data inside the PostReportsPublicationsJSONBody as a PostReportsPublicationsJSONBody0
+func (t PostReportsPublicationsJSONBody) AsPostReportsPublicationsJSONBody0() (PostReportsPublicationsJSONBody0, error) {
+	var body PostReportsPublicationsJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostReportsPublicationsJSONBody0 overwrites any union data inside the PostReportsPublicationsJSONBody as the provided PostReportsPublicationsJSONBody0
+func (t *PostReportsPublicationsJSONBody) FromPostReportsPublicationsJSONBody0(v PostReportsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostReportsPublicationsJSONBody0 performs a merge with any union data inside the PostReportsPublicationsJSONBody, using the provided PostReportsPublicationsJSONBody0
+func (t *PostReportsPublicationsJSONBody) MergePostReportsPublicationsJSONBody0(v PostReportsPublicationsJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPostReportsPublicationsJSONBody1 returns the union data inside the PostReportsPublicationsJSONBody as a PostReportsPublicationsJSONBody1
+func (t PostReportsPublicationsJSONBody) AsPostReportsPublicationsJSONBody1() (PostReportsPublicationsJSONBody1, error) {
+	var body PostReportsPublicationsJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostReportsPublicationsJSONBody1 overwrites any union data inside the PostReportsPublicationsJSONBody as the provided PostReportsPublicationsJSONBody1
+func (t *PostReportsPublicationsJSONBody) FromPostReportsPublicationsJSONBody1(v PostReportsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostReportsPublicationsJSONBody1 performs a merge with any union data inside the PostReportsPublicationsJSONBody, using the provided PostReportsPublicationsJSONBody1
+func (t *PostReportsPublicationsJSONBody) MergePostReportsPublicationsJSONBody1(v PostReportsPublicationsJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PostReportsPublicationsJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PostReportsPublicationsJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsDeleteReportsResponsiblesJSONBody0 returns the union data inside the DeleteReportsResponsiblesJSONBody as a DeleteReportsResponsiblesJSONBody0
+func (t DeleteReportsResponsiblesJSONBody) AsDeleteReportsResponsiblesJSONBody0() (DeleteReportsResponsiblesJSONBody0, error) {
+	var body DeleteReportsResponsiblesJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteReportsResponsiblesJSONBody0 overwrites any union data inside the DeleteReportsResponsiblesJSONBody as the provided DeleteReportsResponsiblesJSONBody0
+func (t *DeleteReportsResponsiblesJSONBody) FromDeleteReportsResponsiblesJSONBody0(v DeleteReportsResponsiblesJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteReportsResponsiblesJSONBody0 performs a merge with any union data inside the DeleteReportsResponsiblesJSONBody, using the provided DeleteReportsResponsiblesJSONBody0
+func (t *DeleteReportsResponsiblesJSONBody) MergeDeleteReportsResponsiblesJSONBody0(v DeleteReportsResponsiblesJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDeleteReportsResponsiblesJSONBody1 returns the union data inside the DeleteReportsResponsiblesJSONBody as a DeleteReportsResponsiblesJSONBody1
+func (t DeleteReportsResponsiblesJSONBody) AsDeleteReportsResponsiblesJSONBody1() (DeleteReportsResponsiblesJSONBody1, error) {
+	var body DeleteReportsResponsiblesJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteReportsResponsiblesJSONBody1 overwrites any union data inside the DeleteReportsResponsiblesJSONBody as the provided DeleteReportsResponsiblesJSONBody1
+func (t *DeleteReportsResponsiblesJSONBody) FromDeleteReportsResponsiblesJSONBody1(v DeleteReportsResponsiblesJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteReportsResponsiblesJSONBody1 performs a merge with any union data inside the DeleteReportsResponsiblesJSONBody, using the provided DeleteReportsResponsiblesJSONBody1
+func (t *DeleteReportsResponsiblesJSONBody) MergeDeleteReportsResponsiblesJSONBody1(v DeleteReportsResponsiblesJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DeleteReportsResponsiblesJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *DeleteReportsResponsiblesJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsPostReportsResponsiblesJSONBody0 returns the union data inside the PostReportsResponsiblesJSONBody as a PostReportsResponsiblesJSONBody0
+func (t PostReportsResponsiblesJSONBody) AsPostReportsResponsiblesJSONBody0() (PostReportsResponsiblesJSONBody0, error) {
+	var body PostReportsResponsiblesJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostReportsResponsiblesJSONBody0 overwrites any union data inside the PostReportsResponsiblesJSONBody as the provided PostReportsResponsiblesJSONBody0
+func (t *PostReportsResponsiblesJSONBody) FromPostReportsResponsiblesJSONBody0(v PostReportsResponsiblesJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostReportsResponsiblesJSONBody0 performs a merge with any union data inside the PostReportsResponsiblesJSONBody, using the provided PostReportsResponsiblesJSONBody0
+func (t *PostReportsResponsiblesJSONBody) MergePostReportsResponsiblesJSONBody0(v PostReportsResponsiblesJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPostReportsResponsiblesJSONBody1 returns the union data inside the PostReportsResponsiblesJSONBody as a PostReportsResponsiblesJSONBody1
+func (t PostReportsResponsiblesJSONBody) AsPostReportsResponsiblesJSONBody1() (PostReportsResponsiblesJSONBody1, error) {
+	var body PostReportsResponsiblesJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostReportsResponsiblesJSONBody1 overwrites any union data inside the PostReportsResponsiblesJSONBody as the provided PostReportsResponsiblesJSONBody1
+func (t *PostReportsResponsiblesJSONBody) FromPostReportsResponsiblesJSONBody1(v PostReportsResponsiblesJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostReportsResponsiblesJSONBody1 performs a merge with any union data inside the PostReportsResponsiblesJSONBody, using the provided PostReportsResponsiblesJSONBody1
+func (t *PostReportsResponsiblesJSONBody) MergePostReportsResponsiblesJSONBody1(v PostReportsResponsiblesJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PostReportsResponsiblesJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PostReportsResponsiblesJSONBody) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

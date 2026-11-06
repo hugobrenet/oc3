@@ -2228,6 +2228,45 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteCharts
+      description: |
+        Same as DELETE /charts/{chart_id}, the ids given by the id key of the body:
+        one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
 
   /charts/{chart_id}:
     get:
@@ -2252,6 +2291,89 @@ paths:
                 $ref: '#/components/schemas/ChartListResponse'
         401:
           $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostChart
+      description: |
+        Change the name or the definition of a chart, logged (chart.change); a new
+        definition is recorded in its history. Requires the ReportsManager privilege and responsibility for the chart.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                chart_name:
+                  type: string
+                  description: New unique name of the chart.
+                chart_yaml:
+                  type: string
+                  description: New definition of the chart, in YAML, recorded in its history.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteChart
+      description: |
+        Delete a chart, with its publications and responsibles,
+        logged (chart.del). Its history is kept. Requires the ReportsManager privilege and responsibility for the chart.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -7551,6 +7673,45 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteMetrics
+      description: |
+        Same as DELETE /metrics/{metric_id}, the ids given by the id key of the body:
+        one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
 
   /metrics/{metric_id}:
     get:
@@ -7648,6 +7809,40 @@ paths:
           $ref: '#/components/responses/404'
         409:
           $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteMetric
+      description: |
+        Delete a metric, with its publications, and its historized series,
+        logged (metric.del). Its history is kept. Requires the Manager privilege.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -7949,6 +8144,45 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteReports
+      description: |
+        Same as DELETE /reports/{report_id}, the ids given by the id key of the body:
+        one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
 
   /reports/{report_id}:
     get:
@@ -7973,6 +8207,89 @@ paths:
                 $ref: '#/components/schemas/ReportListResponse'
         401:
           $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostReport
+      description: |
+        Change the name or the definition of a report, logged (report.change); a new
+        definition is recorded in its history. Requires the ReportsManager privilege and responsibility for the report.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                report_name:
+                  type: string
+                  description: New unique name of the report.
+                report_yaml:
+                  type: string
+                  description: New definition of the report, in YAML, recorded in its history.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteReport
+      description: |
+        Delete a report, with its publications and responsibles,
+        logged (report.del). Its history is kept. Requires the ReportsManager privilege and responsibility for the report.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -21402,6 +21719,1684 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /reports/{report_id}/am_i_responsible:
+    get:
+      operationId: GetReportAmIResponsible
+      description: |
+        Tell whether the caller may change the report, as {"data": true} or
+        {"data": false}: the ReportsManager privilege and responsibility for the report.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: boolean
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/publications:
+    get:
+      operationId: GetReportPublications
+      description: |
+        List the groups the report is published to. Requires the report to be
+        published to the caller, unless a manager.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/publications/{group_id}:
+    post:
+      operationId: PostReportPublication
+      description: |
+        Publish the report to a group, logged (report.publication.add). A non-manager chooses among
+        their own groups; privilege groups are refused. Requires the ReportsManager privilege and responsibility for the report.
+        An existing link answers with an info message.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteReportPublication
+      description: |
+        Unpublish the report from a group, logged (report.publication.delete). Requires the ReportsManager privilege and responsibility for the report.
+        A missing link answers with an info message.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports_publications:
+    post:
+      operationId: PostReportsPublications
+      description: |
+        Same as POST /reports/{report_id}/publications/{group_id}, the report_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteReportsPublications
+      description: |
+        Same as DELETE /reports/{report_id}/publications/{group_id}, the report_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/responsibles:
+    get:
+      operationId: GetReportResponsibles
+      description: |
+        List the groups the report is the responsibility of. Requires the report to be
+        published to the caller, unless a manager.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/responsibles/{group_id}:
+    post:
+      operationId: PostReportResponsible
+      description: |
+        Make a group responsible for the report, logged (report.responsible.add). A non-manager chooses among
+        their own groups; privilege groups are refused. Requires the ReportsManager privilege and responsibility for the report.
+        An existing link answers with an info message.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteReportResponsible
+      description: |
+        Remove a responsible group from the report, logged (report.responsible.delete). Requires the ReportsManager privilege and responsibility for the report.
+        A missing link answers with an info message.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports_responsibles:
+    post:
+      operationId: PostReportsResponsibles
+      description: |
+        Same as POST /reports/{report_id}/responsibles/{group_id}, the report_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteReportsResponsibles
+      description: |
+        Same as DELETE /reports/{report_id}/responsibles/{group_id}, the report_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/revisions:
+    get:
+      operationId: GetReportRevisions
+      description: |
+        List the revisions of the report definition, from its git history, the
+        newest first, 300 at most: an empty list when the report is not published
+        to the caller.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormRevisionListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/revisions/{cid}:
+    get:
+      operationId: GetReportRevision
+      description: |
+        Show the report definition at a revision: empty when the revision holds
+        none, or when the report is not published to the caller.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormRevisionResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/diff/{cid}:
+    get:
+      operationId: GetReportDiff
+      description: |
+        Show the change made by a revision, or the differences between cid and
+        other when set, as git prints them: empty when the report is not published
+        to the caller.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+        - in: query
+          name: other
+          required: false
+          description: Another revision to compare cid with
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormDiffResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/rollback/{cid}:
+    post:
+      operationId: PostReportRollback
+      description: |
+        Restore the report definition of a revision, recorded as a new revision
+        and logged (report.rollback). Requires the ReportsManager privilege and responsibility for the report.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/am_i_responsible:
+    get:
+      operationId: GetChartAmIResponsible
+      description: |
+        Tell whether the caller may change the chart, as {"data": true} or
+        {"data": false}: the ReportsManager privilege and responsibility for the chart.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: boolean
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/publications:
+    get:
+      operationId: GetChartPublications
+      description: |
+        List the groups the chart is published to. Requires the chart to be
+        published to the caller, unless a manager.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/publications/{group_id}:
+    post:
+      operationId: PostChartPublication
+      description: |
+        Publish the chart to a group, logged (chart.publication.add). A non-manager chooses among
+        their own groups; privilege groups are refused. Requires the ReportsManager privilege and responsibility for the chart.
+        An existing link answers with an info message.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteChartPublication
+      description: |
+        Unpublish the chart from a group, logged (chart.publication.delete). Requires the ReportsManager privilege and responsibility for the chart.
+        A missing link answers with an info message.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts_publications:
+    post:
+      operationId: PostChartsPublications
+      description: |
+        Same as POST /charts/{chart_id}/publications/{group_id}, the chart_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteChartsPublications
+      description: |
+        Same as DELETE /charts/{chart_id}/publications/{group_id}, the chart_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/responsibles:
+    get:
+      operationId: GetChartResponsibles
+      description: |
+        List the groups the chart is the responsibility of. Requires the chart to be
+        published to the caller, unless a manager.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/responsibles/{group_id}:
+    post:
+      operationId: PostChartResponsible
+      description: |
+        Make a group responsible for the chart, logged (chart.responsible.add). A non-manager chooses among
+        their own groups; privilege groups are refused. Requires the ReportsManager privilege and responsibility for the chart.
+        An existing link answers with an info message.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteChartResponsible
+      description: |
+        Remove a responsible group from the chart, logged (chart.responsible.delete). Requires the ReportsManager privilege and responsibility for the chart.
+        A missing link answers with an info message.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts_responsibles:
+    post:
+      operationId: PostChartsResponsibles
+      description: |
+        Same as POST /charts/{chart_id}/responsibles/{group_id}, the chart_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteChartsResponsibles
+      description: |
+        Same as DELETE /charts/{chart_id}/responsibles/{group_id}, the chart_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/revisions:
+    get:
+      operationId: GetChartRevisions
+      description: |
+        List the revisions of the chart definition, from its git history, the
+        newest first, 300 at most: an empty list when the chart is not published
+        to the caller.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormRevisionListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/revisions/{cid}:
+    get:
+      operationId: GetChartRevision
+      description: |
+        Show the chart definition at a revision: empty when the revision holds
+        none, or when the chart is not published to the caller.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormRevisionResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/diff/{cid}:
+    get:
+      operationId: GetChartDiff
+      description: |
+        Show the change made by a revision, or the differences between cid and
+        other when set, as git prints them: empty when the chart is not published
+        to the caller.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+        - in: query
+          name: other
+          required: false
+          description: Another revision to compare cid with
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormDiffResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/rollback/{cid}:
+    post:
+      operationId: PostChartRollback
+      description: |
+        Restore the chart definition of a revision, recorded as a new revision
+        and logged (chart.rollback). Requires the ReportsManager privilege and responsibility for the chart.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}/am_i_responsible:
+    get:
+      operationId: GetMetricAmIResponsible
+      description: |
+        Tell whether the caller may change the metric, as {"data": true} or
+        {"data": false}: the Manager privilege.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: boolean
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}/publications:
+    get:
+      operationId: GetMetricPublications
+      description: |
+        List the groups the metric is published to. Requires the metric to be
+        published to the caller, unless a manager.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}/publications/{group_id}:
+    post:
+      operationId: PostMetricPublication
+      description: |
+        Publish the metric to a group, logged (metric.publication.add). A non-manager chooses among
+        their own groups; privilege groups are refused. Requires the Manager privilege.
+        An existing link answers with an info message.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteMetricPublication
+      description: |
+        Unpublish the metric from a group, logged (metric.publication.delete). Requires the Manager privilege.
+        A missing link answers with an info message.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics_publications:
+    post:
+      operationId: PostMetricsPublications
+      description: |
+        Same as POST /metrics/{metric_id}/publications/{group_id}, the metric_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteMetricsPublications
+      description: |
+        Same as DELETE /metrics/{metric_id}/publications/{group_id}, the metric_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}/revisions:
+    get:
+      operationId: GetMetricRevisions
+      description: |
+        List the revisions of the metric definition, from its git history, the
+        newest first, 300 at most: an empty list when the metric is not published
+        to the caller.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormRevisionListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}/revisions/{cid}:
+    get:
+      operationId: GetMetricRevision
+      description: |
+        Show the metric definition at a revision: empty when the revision holds
+        none, or when the metric is not published to the caller.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormRevisionResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}/diff/{cid}:
+    get:
+      operationId: GetMetricDiff
+      description: |
+        Show the change made by a revision, or the differences between cid and
+        other when set, as git prints them: empty when the metric is not published
+        to the caller.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+        - in: query
+          name: other
+          required: false
+          description: Another revision to compare cid with
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormDiffResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}/rollback/{cid}:
+    post:
+      operationId: PostMetricRollback
+      description: |
+        Restore the metric definition of a revision, recorded as a new revision
+        and logged (metric.rollback). Requires the Manager privilege.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/export:
+    get:
+      operationId: GetReportExport
+      description: |
+        Export the report with the charts and the metrics it shows, the ids replaced
+        by the names, in the format POST /reports/import reads. Requires the report
+        to be published to the caller, unless a manager.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportExport'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/import:
+    post:
+      operationId: PostReportsImport
+      description: |
+        Create the metrics, the charts and the reports of an export (GET
+        /reports/{report_id}/export), each published to the primary team of the
+        caller, also made responsible for it. An object of an existing name is kept
+        and used as it is. Requires the ReportsManager privilege, and the Manager
+        privilege to create a metric. Answers what was done and what was not.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportExport'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportImportResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /ai/resources:
     get:
       operationId: GetAIResources
@@ -25157,6 +27152,70 @@ components:
           type: string
         report_yaml:
           type: string
+
+
+    ReportExport:
+      type: object
+      description: |
+        Reports with the charts and the metrics they show, the ids replaced by the
+        names: report_name and chart_name entries in the definitions, metric_name
+        entries in the chart definitions and the report sections.
+      properties:
+        reports:
+          type: array
+          items:
+            type: object
+            required: [report_name]
+            properties:
+              report_name:
+                type: string
+              report_definition:
+                type: object
+                additionalProperties: true
+        charts:
+          type: array
+          items:
+            type: object
+            required: [chart_name]
+            properties:
+              chart_name:
+                type: string
+              chart_definition:
+                type: object
+                additionalProperties: true
+        metrics:
+          type: array
+          items:
+            type: object
+            required: [metric_name]
+            properties:
+              metric_name:
+                type: string
+              metric_sql:
+                type: string
+              metric_col_value_index:
+                type: integer
+                nullable: true
+              metric_col_instance_index:
+                type: integer
+                nullable: true
+              metric_col_instance_label:
+                type: string
+              metric_historize:
+                type: string
+
+    ReportImportResponse:
+      type: object
+      required: [info, error]
+      properties:
+        info:
+          type: array
+          items:
+            type: string
+        error:
+          type: array
+          items:
+            type: string
 
     ReportListResponse:
       type: object
