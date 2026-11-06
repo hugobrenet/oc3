@@ -5,7 +5,7 @@ servers:
 
 info:
   title: opensvc collector api
-  version: 1.0.4
+  version: 1.0.5
 
 paths:
   /actions:
@@ -6276,6 +6276,62 @@ paths:
                 $ref: '#/components/schemas/AssistantError'
         404:
           description: The assistant is not configured (assistant_disabled).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /assistant/tools:
+    get:
+      operationId: GetAssistantTools
+      description: |
+        The tools of the MCP the model may call for the caller, as the agent lists
+        them: name, title, description, arguments, and whether a call needs the
+        confirmation of the user. The assistant shows them to the user.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      responses:
+        200:
+          description: The tools.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantTools'
+        401:
+          description: No access token for the caller (assistant_token_unavailable), or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the agent lists no tools (not_found).
           content:
             application/json:
               schema:
@@ -20917,6 +20973,338 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /ai/resources:
+    get:
+      operationId: GetAIResources
+      description: |
+        List the resources of the AI assistant the caller may read, their metadata only,
+        never their body, sorted by name. An AIManager or a Manager reads them all;
+        the others, those published to none of the groups, or to one of theirs.
+        The publications of each are given to an AIManager or a Manager only.
+        The answer carries an ETag: a request with If-None-Match set to it gets a 304
+        while the list it would read is the same. It serves an administration
+        interface polling the list; the MCP servers read the list at each request
+        and keep nothing.
+      parameters:
+        - $ref: '#/components/parameters/inQueryAIBackend'
+      tags:
+        - ai
+      responses:
+        200:
+          description: OK
+          headers:
+            ETag:
+              description: the version of the list read
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIResourceListResponse'
+        304:
+          description: Not modified since the ETag given in If-None-Match
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    post:
+      operationId: PostAIResources
+      description: |
+        Create a resource of the AI assistant. Its name must be unique among the resources.
+        Requires the AIManager or Manager privilege. The model reads what an AIManager
+        writes as instructions, for every user it is published to.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIResourceInput'
+      tags:
+        - ai
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIResourceMeta'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /ai/resources/{name}:
+    get:
+      operationId: GetAIResource
+      description: |
+        Display a resource of the AI assistant with its body, if the caller may read it
+        (see GET /ai/resources): a resource that does not exist, is not for the backend
+        asked, or is not published to the caller answers the same 404.
+      parameters:
+        - $ref: '#/components/parameters/inPathAIName'
+        - $ref: '#/components/parameters/inQueryAIBackend'
+      tags:
+        - ai
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIResource'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    put:
+      operationId: PutAIResource
+      description: |
+        Replace the writable fields of a resource of the AI assistant; its name stays.
+        Requires the AIManager or Manager privilege. The model reads what an AIManager
+        writes as instructions, for every user it is published to.
+      parameters:
+        - $ref: '#/components/parameters/inPathAIName'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIResourceInput'
+      tags:
+        - ai
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIResourceMeta'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    delete:
+      operationId: DeleteAIResource
+      description: |
+        Delete a resource of the AI assistant. Requires the AIManager or Manager privilege.
+      parameters:
+        - $ref: '#/components/parameters/inPathAIName'
+      tags:
+        - ai
+      responses:
+        204:
+          description: Deleted
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /ai/skills:
+    get:
+      operationId: GetAISkills
+      description: |
+        List the skills of the AI assistant the caller may read, their metadata only,
+        never their body, sorted by name. An AIManager or a Manager reads them all;
+        the others, those published to none of the groups, or to one of theirs.
+        The publications of each are given to an AIManager or a Manager only.
+        The answer carries an ETag: a request with If-None-Match set to it gets a 304
+        while the list it would read is the same. It serves an administration
+        interface polling the list; the MCP servers read the list at each request
+        and keep nothing.
+      parameters:
+        - $ref: '#/components/parameters/inQueryAIBackend'
+      tags:
+        - ai
+      responses:
+        200:
+          description: OK
+          headers:
+            ETag:
+              description: the version of the list read
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AISkillListResponse'
+        304:
+          description: Not modified since the ETag given in If-None-Match
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    post:
+      operationId: PostAISkills
+      description: |
+        Create a skill of the AI assistant. Its name must be unique among the skills.
+        Requires the AIManager or Manager privilege. The model reads what an AIManager
+        writes as instructions, for every user it is published to.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AISkillInput'
+      tags:
+        - ai
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AISkillMeta'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /ai/skills/{name}:
+    get:
+      operationId: GetAISkill
+      description: |
+        Display a skill of the AI assistant with its body, if the caller may read it
+        (see GET /ai/skills): a skill that does not exist, is not for the backend
+        asked, or is not published to the caller answers the same 404.
+      parameters:
+        - $ref: '#/components/parameters/inPathAIName'
+        - $ref: '#/components/parameters/inQueryAIBackend'
+      tags:
+        - ai
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AISkill'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    put:
+      operationId: PutAISkill
+      description: |
+        Replace the writable fields of a skill of the AI assistant; its name stays.
+        Requires the AIManager or Manager privilege. The model reads what an AIManager
+        writes as instructions, for every user it is published to.
+      parameters:
+        - $ref: '#/components/parameters/inPathAIName'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AISkillInput'
+      tags:
+        - ai
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AISkillMeta'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    delete:
+      operationId: DeleteAISkill
+      description: |
+        Delete a skill of the AI assistant. Requires the AIManager or Manager privilege.
+      parameters:
+        - $ref: '#/components/parameters/inPathAIName'
+      tags:
+        - ai
+      responses:
+        204:
+          description: Deleted
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 components:
 
   responses:
@@ -21006,6 +21394,159 @@ components:
             $ref: "#/components/schemas/Problem"
 
   schemas:
+    AIBackend:
+      type: string
+      enum: [om3, oc3]
+      description: an AI backend of the agent, om3 for a cluster, oc3 for the collector
+
+    AIResourceInput:
+      type: object
+      required: [description, backends, body]
+      properties:
+        name:
+          type: string
+          description: the name of the resource, ^[a-z0-9]+(-[a-z0-9]+)*$, at most 64 bytes; required to create it, ignored on a replace
+        title:
+          type: string
+          description: a title on one line, at most 128 bytes
+        description:
+          type: string
+          description: what the text holds and when to read it, at most 1024 bytes; the model reads it to decide
+        mime_type:
+          type: string
+          enum: [text/markdown, text/plain]
+          description: text/markdown by default
+        backends:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIBackend'
+        publications:
+          type: array
+          description: the ids of the groups that may read it; empty, everybody
+          items:
+            type: integer
+        body:
+          type: string
+          description: the text, valid UTF-8, at most 65536 bytes, no NUL byte
+
+    AIResourceMeta:
+      type: object
+      required: [name, title, description, mime_type, backends, size, digest, updated]
+      properties:
+        name:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        mime_type:
+          type: string
+        backends:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIBackend'
+        publications:
+          type: array
+          description: the ids of the groups that may read it, empty for everybody; given to an AIManager only
+          items:
+            type: integer
+        size:
+          type: integer
+          description: the bytes of the body
+        digest:
+          type: string
+          description: sha256:<hex> of the bytes of the body
+        updated:
+          type: string
+          format: date-time
+
+    AIResource:
+      allOf:
+        - $ref: '#/components/schemas/AIResourceMeta'
+        - type: object
+          required: [body]
+          properties:
+            body:
+              type: string
+
+    AIResourceListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIResourceMeta'
+
+    AISkillInput:
+      type: object
+      required: [backends, body]
+      properties:
+        name:
+          type: string
+          description: the name of the skill, the name of its frontmatter too; required to create it, ignored on a replace
+        backends:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIBackend'
+        publications:
+          type: array
+          description: the ids of the groups that may read it; empty, everybody
+          items:
+            type: integer
+        body:
+          type: string
+          description: |
+            the whole SKILL.md, at most 65536 bytes: a YAML frontmatter between two ---
+            lines that start it, whose name equals the name of the skill, whose
+            description is at most 1024 bytes, whose values are strings or a map of
+            strings on one level, metadata.opensvc/tools naming at most 24 tools
+
+    AISkillMeta:
+      type: object
+      required: [name, backends, frontmatter, size, digest, updated]
+      properties:
+        name:
+          type: string
+        backends:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIBackend'
+        publications:
+          type: array
+          description: the ids of the groups that may read it, empty for everybody; given to an AIManager only
+          items:
+            type: integer
+        frontmatter:
+          type: object
+          additionalProperties: true
+          description: the frontmatter as written, its values strings or maps of strings
+        size:
+          type: integer
+        digest:
+          type: string
+        updated:
+          type: string
+          format: date-time
+
+    AISkill:
+      allOf:
+        - $ref: '#/components/schemas/AISkillMeta'
+        - type: object
+          required: [body]
+          properties:
+            body:
+              type: string
+
+    AISkillListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AISkillMeta'
+
     TagAgentCreate:
       type: object
       required:
@@ -23163,6 +23704,10 @@ components:
     AssistantCapabilities:
       type: object
       description: The AG-UI AgentCapabilities of the agent.
+      additionalProperties: true
+    AssistantTools:
+      type: object
+      description: The tools the agent lists, as it gives them.
       additionalProperties: true
     AssistantError:
       type: object
@@ -27740,6 +28285,22 @@ components:
           $ref: '#/components/schemas/ListMeta'
 
   parameters:
+    inQueryAIBackend:
+      in: query
+      name: backend
+      required: false
+      description: only the objects for this backend, as the MCP servers ask; all of them when absent
+      schema:
+        $ref: '#/components/schemas/AIBackend'
+
+    inPathAIName:
+      in: path
+      name: name
+      required: true
+      description: the name of the resource or of the skill
+      schema:
+        type: string
+
     inPathComplianceAgentName:
       in: path
       name: name
