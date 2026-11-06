@@ -611,6 +611,19 @@ var propsMapping = map[string]propMapping{
 			"stor_array": {MappingKey: "array"},
 		},
 	},
+	// The nodes inventorying an array, the columns of the node reachable as
+	// nodes.<column>.
+	"array_proxy": {
+		Available: []string{"id", "array_id", "node_id"},
+		Props: map[string]propDef{
+			"id":       col(schema.StorArrayProxyID),
+			"array_id": colStr(schema.StorArrayProxyArrayID),
+			"node_id":  colStr(schema.StorArrayProxyNodeID),
+		},
+		Joins: map[string]JoinDef{
+			"nodes": {MappingKey: "node"},
+		},
+	},
 	"array_tgtid": {
 		Available: []string{"id", "array_id", "array_tgtid", "updated"},
 		Props: map[string]propDef{

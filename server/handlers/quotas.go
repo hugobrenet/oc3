@@ -165,15 +165,33 @@ func (a *Api) DeleteArrayDiskgroupQuota(c echo.Context, arrayId string, dgId int
 	if err := requireStorageManager(c); err != nil {
 		return err
 	}
-	dg, quota, err := a.quotaInDiskGroup(ctx, log, arrayId, dgId, quotaId)
+	result, err := a.deleteQuota(c, ctx, log, arrayId, dgId, quotaId)
 	if err != nil {
 		return httpProblem(c, err)
 	}
-	if err := a.ODB.DeleteQuota(ctx, quota.ID); err != nil {
-		return httpProblem(c, httpInternal(log, "cannot delete the quota", err))
+	if err := a.ODB.Session.NotifyChanges(ctx); err != nil {
+		log.Error("cannot notify changes", "error", err)
 	}
+	return c.JSON(http.StatusOK, result)
+}
+
+// deleteQuota deletes a quota of a disk group, makes the space reserved in the
+// disk group the sum of its quotas again and logs it (quota.del).
+func (a *Api) deleteQuota(c echo.Context, ctx context.Context, log *slog.Logger, arrayID string, dgID, quotaID int64) (server.QuotaChangeResponse, error) {
+	dg, quota, err := a.quotaInDiskGroup(ctx, log, arrayID, dgID, quotaID)
+	if err != nil {
+		return server.QuotaChangeResponse{}, err
+	}
+	if err := a.ODB.DeleteQuota(ctx, quota.ID); err != nil {
+		return server.QuotaChangeResponse{}, httpInternal(log, "cannot delete the quota", err)
+	}
+	if err := a.ODB.RefreshDiskGroupReserved(ctx, dg.ID); err != nil {
+		log.Error("cannot refresh the space reserved in the disk group", "dg_id", dg.ID, "error", err)
+	}
+	format := "%(quota)s quota deleted for app %(app)s in dg %(dg)s"
 	d := map[string]any{"quota": strconv.FormatInt(quota.Quota, 10), "app": quota.App, "dg": dg.Name}
-	return a.quotaDone(c, ctx, log, dg.ID, quota.ID, "quota.del", "%(quota)s quota deleted for app %(app)s in dg %(dg)s", d)
+	a.auditLog(c, ctx, log, cdb.LogEntry{Action: "quota.del", Fmt: format, Dict: d})
+	return server.QuotaChangeResponse{Info: pyFormat(format, d), Id: quota.ID}, nil
 }
 
 // requireStorageManager refuses a caller without the StorageManager privilege,

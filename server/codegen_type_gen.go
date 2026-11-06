@@ -2102,6 +2102,33 @@ type ArrayListResponse_Data struct {
 	union json.RawMessage
 }
 
+// ArrayProxyListResponse defines model for ArrayProxyListResponse.
+type ArrayProxyListResponse struct {
+	Data ArrayProxyListResponse_Data `json:"data"`
+	Meta *ListMeta                   `json:"meta,omitempty"`
+}
+
+// ArrayProxyListResponseData0 defines model for .
+type ArrayProxyListResponseData0 = []ArrayProxyRow
+
+// ArrayProxyListResponseData1 defines model for .
+type ArrayProxyListResponseData1 map[string]map[string]int
+
+// ArrayProxyListResponse_Data defines model for ArrayProxyListResponse.Data.
+type ArrayProxyListResponse_Data struct {
+	union json.RawMessage
+}
+
+// ArrayProxyRow A node inventorying a storage array. Every property is optional: the
+// props query parameter selects them; the columns of the node read as
+// nodes.<column>.
+type ArrayProxyRow struct {
+	ArrayId              *string                `json:"array_id,omitempty"`
+	Id                   *int                   `json:"id,omitempty"`
+	NodeId               *string                `json:"node_id,omitempty"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
 // ArrayRow A storage array. Every property is optional: the props query parameter
 // selects them. array_cache is in MB.
 type ArrayRow struct {
@@ -2113,6 +2140,32 @@ type ArrayRow struct {
 	ArrayName     *string `json:"array_name,omitempty"`
 	ArrayUpdated  *string `json:"array_updated,omitempty"`
 	Id            *int    `json:"id,omitempty"`
+}
+
+// ArrayTargetListResponse defines model for ArrayTargetListResponse.
+type ArrayTargetListResponse struct {
+	Data ArrayTargetListResponse_Data `json:"data"`
+	Meta *ListMeta                    `json:"meta,omitempty"`
+}
+
+// ArrayTargetListResponseData0 defines model for .
+type ArrayTargetListResponseData0 = []ArrayTargetRow
+
+// ArrayTargetListResponseData1 defines model for .
+type ArrayTargetListResponseData1 map[string]map[string]int
+
+// ArrayTargetListResponse_Data defines model for ArrayTargetListResponse.Data.
+type ArrayTargetListResponse_Data struct {
+	union json.RawMessage
+}
+
+// ArrayTargetRow A target port of a storage array. Every property is optional: the props
+// query parameter selects them.
+type ArrayTargetRow struct {
+	ArrayId    *string `json:"array_id,omitempty"`
+	ArrayTgtid *string `json:"array_tgtid,omitempty"`
+	Id         *int    `json:"id,omitempty"`
+	Updated    *string `json:"updated,omitempty"`
 }
 
 // AssistantCapabilities The AG-UI AgentCapabilities of the agent.
@@ -7898,6 +7951,18 @@ type GetArraysParams struct {
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
+// GetArrayParams defines parameters for GetArray.
+type GetArrayParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
+// PostArrayJSONBody defines parameters for PostArray.
+type PostArrayJSONBody struct {
+	// ArrayComment Free text about the array, 255 characters at most.
+	ArrayComment *string `json:"array_comment,omitempty"`
+}
+
 // GetArrayDiskgroupsParams defines parameters for GetArrayDiskgroups.
 type GetArrayDiskgroupsParams struct {
 	// Props A list of properties to include in each data dictionnary.
@@ -7953,6 +8018,23 @@ type GetArrayDiskgroupsParams struct {
 	// expression is answered with 400.
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 }
+
+// GetArrayDiskgroupParams defines parameters for GetArrayDiskgroup.
+type GetArrayDiskgroupParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
+// DeleteArrayDiskgroupQuotasJSONBody defines parameters for DeleteArrayDiskgroupQuotas.
+type DeleteArrayDiskgroupQuotasJSONBody struct {
+	union json.RawMessage
+}
+
+// DeleteArrayDiskgroupQuotasJSONBody0 defines parameters for DeleteArrayDiskgroupQuotas.
+type DeleteArrayDiskgroupQuotasJSONBody0 map[string]interface{}
+
+// DeleteArrayDiskgroupQuotasJSONBody1 defines parameters for DeleteArrayDiskgroupQuotas.
+type DeleteArrayDiskgroupQuotasJSONBody1 = []map[string]interface{}
 
 // GetArrayDiskgroupQuotasParams defines parameters for GetArrayDiskgroupQuotas.
 type GetArrayDiskgroupQuotasParams struct {
@@ -8010,8 +8092,204 @@ type GetArrayDiskgroupQuotasParams struct {
 	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
 }
 
+// GetArrayDiskgroupQuotaParams defines parameters for GetArrayDiskgroupQuota.
+type GetArrayDiskgroupQuotaParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+}
+
 // GetArrayDisksParams defines parameters for GetArrayDisks.
 type GetArrayDisksParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// DeleteArrayProxiesJSONBody defines parameters for DeleteArrayProxies.
+type DeleteArrayProxiesJSONBody struct {
+	union json.RawMessage
+}
+
+// DeleteArrayProxiesJSONBody0 defines parameters for DeleteArrayProxies.
+type DeleteArrayProxiesJSONBody0 map[string]interface{}
+
+// DeleteArrayProxiesJSONBody1 defines parameters for DeleteArrayProxies.
+type DeleteArrayProxiesJSONBody1 = []map[string]interface{}
+
+// GetArrayProxiesParams defines parameters for GetArrayProxies.
+type GetArrayProxiesParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// PostArrayProxiesJSONBody defines parameters for PostArrayProxies.
+type PostArrayProxiesJSONBody struct {
+	union json.RawMessage
+}
+
+// PostArrayProxiesJSONBody0 defines parameters for PostArrayProxies.
+type PostArrayProxiesJSONBody0 map[string]interface{}
+
+// PostArrayProxiesJSONBody1 defines parameters for PostArrayProxies.
+type PostArrayProxiesJSONBody1 = []map[string]interface{}
+
+// GetArrayTargetsParams defines parameters for GetArrayTargets.
+type GetArrayTargetsParams struct {
+	// Props A list of properties to include in each data dictionnary.
+	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
+
+	// Limit The maximum number of entries to return. 0 means no limit.
+	Limit *InQueryLimit `form:"limit,omitempty" json:"limit,omitempty"`
+
+	// Offset Skip the first entries of the data cursor.
+	Offset *InQueryOffset `form:"offset,omitempty" json:"offset,omitempty"`
+
+	// Meta Include metadata in the response. Enabled by default. Use false or 0 to omit
+	// the meta field. The metadata of a list carries its total number of rows
+	// without pagination (total), as well as the rows returned (count), the offset
+	// and the limit.
+	Meta *InQueryMeta `form:"meta,omitempty" json:"meta,omitempty"`
+
+	// Stats With "1" or "true", the response counts the distinct values of each
+	// selected property instead of listing the rows: `data` maps each property
+	// to an object of value → number of rows ("empty" for a null or blank
+	// value), over the whole selection (access control, filters and session
+	// filterset applied, `offset` ignored). `limit`, when given, caps the
+	// number of values returned per property, the most frequent first; without
+	// it every value is returned. `meta.total` is the number of rows,
+	// `meta.distinct` the number of distinct values of each property, and
+	// `meta.other` the number of rows whose value was left out by the limit.
+	// A count taking longer than 5 seconds is refused with a 400, asking to
+	// narrow the selection.
+	Stats *InQueryStats `form:"stats,omitempty" json:"stats,omitempty"`
+
+	// Orderby Comma-separated list of properties to sort by. Prefix a property with - for descending order (e.g. orderby=nodename,-app).
+	Orderby *InQueryOrderby `form:"orderby,omitempty" json:"orderby,omitempty"`
+
+	// Groupby Comma-separated list of properties to group the result by (e.g. groupby=app,svcname).
+	Groupby *InQueryGroupby `form:"groupby,omitempty" json:"groupby,omitempty"`
+
+	// Filter Column filter, repeatable; several filters combine with AND. Each value is
+	// `prop:expr`, `prop` being a property of the list (joined ones included, as
+	// for orderby) and `expr` one of:
+	//   - text: case-insensitive match anywhere in the value;
+	//   - `~regex`: regular expression (RE2 syntax), case-insensitive;
+	//   - `in:a,b,c`: one of the listed values;
+	//   - `eq:v`, `ne:v`: equal, not equal;
+	//   - `gt:v`, `gte:v`, `lt:v`, `lte:v`: comparisons, for numbers and dates;
+	//     a date may be relative to now, `-` then a duration in weeks, days,
+	//     hours, minutes and seconds: `lt:-15m` keeps the dates older than 15
+	//     minutes, `gte:-1d12h` those of the last day and a half;
+	//   - `empty`: no value;
+	//   - `!expr`: the inverse of any of the above, that is the rows `expr` leaves
+	//     out, those without a value included: `!dev`, `!~^dev`, `!in:a,b`,
+	//     `!empty` (any value).
+	// An unknown property, a property without a column, or an invalid regular
+	// expression is answered with 400.
+	Filter *InQueryFilter `form:"filter,omitempty" json:"filter,omitempty"`
+}
+
+// GetArraysDiskgroupsParams defines parameters for GetArraysDiskgroups.
+type GetArraysDiskgroupsParams struct {
 	// Props A list of properties to include in each data dictionnary.
 	Props *InQueryProps `form:"props,omitempty" json:"props,omitempty"`
 
@@ -16952,11 +17230,23 @@ type DeleteAppsResponsiblesJSONRequestBody DeleteAppsResponsiblesJSONBody
 // PostAppsResponsiblesJSONRequestBody defines body for PostAppsResponsibles for application/json ContentType.
 type PostAppsResponsiblesJSONRequestBody PostAppsResponsiblesJSONBody
 
+// PostArrayJSONRequestBody defines body for PostArray for application/json ContentType.
+type PostArrayJSONRequestBody PostArrayJSONBody
+
+// DeleteArrayDiskgroupQuotasJSONRequestBody defines body for DeleteArrayDiskgroupQuotas for application/json ContentType.
+type DeleteArrayDiskgroupQuotasJSONRequestBody DeleteArrayDiskgroupQuotasJSONBody
+
 // PostArrayDiskgroupQuotasJSONRequestBody defines body for PostArrayDiskgroupQuotas for application/json ContentType.
 type PostArrayDiskgroupQuotasJSONRequestBody = QuotaInput
 
 // PostArrayDiskgroupQuotaJSONRequestBody defines body for PostArrayDiskgroupQuota for application/json ContentType.
 type PostArrayDiskgroupQuotaJSONRequestBody = QuotaInput
+
+// DeleteArrayProxiesJSONRequestBody defines body for DeleteArrayProxies for application/json ContentType.
+type DeleteArrayProxiesJSONRequestBody DeleteArrayProxiesJSONBody
+
+// PostArrayProxiesJSONRequestBody defines body for PostArrayProxies for application/json ContentType.
+type PostArrayProxiesJSONRequestBody PostArrayProxiesJSONBody
 
 // PatchAssistantConversationJSONRequestBody defines body for PatchAssistantConversation for application/json ContentType.
 type PatchAssistantConversationJSONRequestBody = AssistantTitleRequest
@@ -17450,6 +17740,104 @@ type PostUserPasswordJSONRequestBody PostUserPasswordJSONBody
 // PostUserPrefsJSONRequestBody defines body for PostUserPrefs for application/json ContentType.
 type PostUserPrefsJSONRequestBody PostUserPrefsJSONBody
 
+// Getter for additional properties for ArrayProxyRow. Returns the specified
+// element and whether it was found
+func (a ArrayProxyRow) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for ArrayProxyRow
+func (a *ArrayProxyRow) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for ArrayProxyRow to handle AdditionalProperties
+func (a *ArrayProxyRow) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["array_id"]; found {
+		err = json.Unmarshal(raw, &a.ArrayId)
+		if err != nil {
+			return fmt.Errorf("error reading 'array_id': %w", err)
+		}
+		delete(object, "array_id")
+	}
+
+	if raw, found := object["id"]; found {
+		err = json.Unmarshal(raw, &a.Id)
+		if err != nil {
+			return fmt.Errorf("error reading 'id': %w", err)
+		}
+		delete(object, "id")
+	}
+
+	if raw, found := object["node_id"]; found {
+		err = json.Unmarshal(raw, &a.NodeId)
+		if err != nil {
+			return fmt.Errorf("error reading 'node_id': %w", err)
+		}
+		delete(object, "node_id")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for ArrayProxyRow to handle AdditionalProperties
+func (a ArrayProxyRow) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.ArrayId != nil {
+		object["array_id"], err = json.Marshal(a.ArrayId)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'array_id': %w", err)
+		}
+	}
+
+	if a.Id != nil {
+		object["id"], err = json.Marshal(a.Id)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'id': %w", err)
+		}
+	}
+
+	if a.NodeId != nil {
+		object["node_id"], err = json.Marshal(a.NodeId)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'node_id': %w", err)
+		}
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
 // Getter for additional properties for AssistantRunInput. Returns the specified
 // element and whether it was found
 func (a AssistantRunInput) Get(fieldName string) (value interface{}, found bool) {
@@ -17771,6 +18159,130 @@ func (t ArrayListResponse_Data) MarshalJSON() ([]byte, error) {
 }
 
 func (t *ArrayListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsArrayProxyListResponseData0 returns the union data inside the ArrayProxyListResponse_Data as a ArrayProxyListResponseData0
+func (t ArrayProxyListResponse_Data) AsArrayProxyListResponseData0() (ArrayProxyListResponseData0, error) {
+	var body ArrayProxyListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromArrayProxyListResponseData0 overwrites any union data inside the ArrayProxyListResponse_Data as the provided ArrayProxyListResponseData0
+func (t *ArrayProxyListResponse_Data) FromArrayProxyListResponseData0(v ArrayProxyListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeArrayProxyListResponseData0 performs a merge with any union data inside the ArrayProxyListResponse_Data, using the provided ArrayProxyListResponseData0
+func (t *ArrayProxyListResponse_Data) MergeArrayProxyListResponseData0(v ArrayProxyListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsArrayProxyListResponseData1 returns the union data inside the ArrayProxyListResponse_Data as a ArrayProxyListResponseData1
+func (t ArrayProxyListResponse_Data) AsArrayProxyListResponseData1() (ArrayProxyListResponseData1, error) {
+	var body ArrayProxyListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromArrayProxyListResponseData1 overwrites any union data inside the ArrayProxyListResponse_Data as the provided ArrayProxyListResponseData1
+func (t *ArrayProxyListResponse_Data) FromArrayProxyListResponseData1(v ArrayProxyListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeArrayProxyListResponseData1 performs a merge with any union data inside the ArrayProxyListResponse_Data, using the provided ArrayProxyListResponseData1
+func (t *ArrayProxyListResponse_Data) MergeArrayProxyListResponseData1(v ArrayProxyListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ArrayProxyListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ArrayProxyListResponse_Data) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsArrayTargetListResponseData0 returns the union data inside the ArrayTargetListResponse_Data as a ArrayTargetListResponseData0
+func (t ArrayTargetListResponse_Data) AsArrayTargetListResponseData0() (ArrayTargetListResponseData0, error) {
+	var body ArrayTargetListResponseData0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromArrayTargetListResponseData0 overwrites any union data inside the ArrayTargetListResponse_Data as the provided ArrayTargetListResponseData0
+func (t *ArrayTargetListResponse_Data) FromArrayTargetListResponseData0(v ArrayTargetListResponseData0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeArrayTargetListResponseData0 performs a merge with any union data inside the ArrayTargetListResponse_Data, using the provided ArrayTargetListResponseData0
+func (t *ArrayTargetListResponse_Data) MergeArrayTargetListResponseData0(v ArrayTargetListResponseData0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsArrayTargetListResponseData1 returns the union data inside the ArrayTargetListResponse_Data as a ArrayTargetListResponseData1
+func (t ArrayTargetListResponse_Data) AsArrayTargetListResponseData1() (ArrayTargetListResponseData1, error) {
+	var body ArrayTargetListResponseData1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromArrayTargetListResponseData1 overwrites any union data inside the ArrayTargetListResponse_Data as the provided ArrayTargetListResponseData1
+func (t *ArrayTargetListResponse_Data) FromArrayTargetListResponseData1(v ArrayTargetListResponseData1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeArrayTargetListResponseData1 performs a merge with any union data inside the ArrayTargetListResponse_Data, using the provided ArrayTargetListResponseData1
+func (t *ArrayTargetListResponse_Data) MergeArrayTargetListResponseData1(v ArrayTargetListResponseData1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t ArrayTargetListResponse_Data) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *ArrayTargetListResponse_Data) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }
@@ -21119,6 +21631,192 @@ func (t PutActions200JSONResponseBody) MarshalJSON() ([]byte, error) {
 }
 
 func (t *PutActions200JSONResponseBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsDeleteArrayDiskgroupQuotasJSONBody0 returns the union data inside the DeleteArrayDiskgroupQuotasJSONBody as a DeleteArrayDiskgroupQuotasJSONBody0
+func (t DeleteArrayDiskgroupQuotasJSONBody) AsDeleteArrayDiskgroupQuotasJSONBody0() (DeleteArrayDiskgroupQuotasJSONBody0, error) {
+	var body DeleteArrayDiskgroupQuotasJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteArrayDiskgroupQuotasJSONBody0 overwrites any union data inside the DeleteArrayDiskgroupQuotasJSONBody as the provided DeleteArrayDiskgroupQuotasJSONBody0
+func (t *DeleteArrayDiskgroupQuotasJSONBody) FromDeleteArrayDiskgroupQuotasJSONBody0(v DeleteArrayDiskgroupQuotasJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteArrayDiskgroupQuotasJSONBody0 performs a merge with any union data inside the DeleteArrayDiskgroupQuotasJSONBody, using the provided DeleteArrayDiskgroupQuotasJSONBody0
+func (t *DeleteArrayDiskgroupQuotasJSONBody) MergeDeleteArrayDiskgroupQuotasJSONBody0(v DeleteArrayDiskgroupQuotasJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDeleteArrayDiskgroupQuotasJSONBody1 returns the union data inside the DeleteArrayDiskgroupQuotasJSONBody as a DeleteArrayDiskgroupQuotasJSONBody1
+func (t DeleteArrayDiskgroupQuotasJSONBody) AsDeleteArrayDiskgroupQuotasJSONBody1() (DeleteArrayDiskgroupQuotasJSONBody1, error) {
+	var body DeleteArrayDiskgroupQuotasJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteArrayDiskgroupQuotasJSONBody1 overwrites any union data inside the DeleteArrayDiskgroupQuotasJSONBody as the provided DeleteArrayDiskgroupQuotasJSONBody1
+func (t *DeleteArrayDiskgroupQuotasJSONBody) FromDeleteArrayDiskgroupQuotasJSONBody1(v DeleteArrayDiskgroupQuotasJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteArrayDiskgroupQuotasJSONBody1 performs a merge with any union data inside the DeleteArrayDiskgroupQuotasJSONBody, using the provided DeleteArrayDiskgroupQuotasJSONBody1
+func (t *DeleteArrayDiskgroupQuotasJSONBody) MergeDeleteArrayDiskgroupQuotasJSONBody1(v DeleteArrayDiskgroupQuotasJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DeleteArrayDiskgroupQuotasJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *DeleteArrayDiskgroupQuotasJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsDeleteArrayProxiesJSONBody0 returns the union data inside the DeleteArrayProxiesJSONBody as a DeleteArrayProxiesJSONBody0
+func (t DeleteArrayProxiesJSONBody) AsDeleteArrayProxiesJSONBody0() (DeleteArrayProxiesJSONBody0, error) {
+	var body DeleteArrayProxiesJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteArrayProxiesJSONBody0 overwrites any union data inside the DeleteArrayProxiesJSONBody as the provided DeleteArrayProxiesJSONBody0
+func (t *DeleteArrayProxiesJSONBody) FromDeleteArrayProxiesJSONBody0(v DeleteArrayProxiesJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteArrayProxiesJSONBody0 performs a merge with any union data inside the DeleteArrayProxiesJSONBody, using the provided DeleteArrayProxiesJSONBody0
+func (t *DeleteArrayProxiesJSONBody) MergeDeleteArrayProxiesJSONBody0(v DeleteArrayProxiesJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsDeleteArrayProxiesJSONBody1 returns the union data inside the DeleteArrayProxiesJSONBody as a DeleteArrayProxiesJSONBody1
+func (t DeleteArrayProxiesJSONBody) AsDeleteArrayProxiesJSONBody1() (DeleteArrayProxiesJSONBody1, error) {
+	var body DeleteArrayProxiesJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromDeleteArrayProxiesJSONBody1 overwrites any union data inside the DeleteArrayProxiesJSONBody as the provided DeleteArrayProxiesJSONBody1
+func (t *DeleteArrayProxiesJSONBody) FromDeleteArrayProxiesJSONBody1(v DeleteArrayProxiesJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeDeleteArrayProxiesJSONBody1 performs a merge with any union data inside the DeleteArrayProxiesJSONBody, using the provided DeleteArrayProxiesJSONBody1
+func (t *DeleteArrayProxiesJSONBody) MergeDeleteArrayProxiesJSONBody1(v DeleteArrayProxiesJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t DeleteArrayProxiesJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *DeleteArrayProxiesJSONBody) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
+
+// AsPostArrayProxiesJSONBody0 returns the union data inside the PostArrayProxiesJSONBody as a PostArrayProxiesJSONBody0
+func (t PostArrayProxiesJSONBody) AsPostArrayProxiesJSONBody0() (PostArrayProxiesJSONBody0, error) {
+	var body PostArrayProxiesJSONBody0
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostArrayProxiesJSONBody0 overwrites any union data inside the PostArrayProxiesJSONBody as the provided PostArrayProxiesJSONBody0
+func (t *PostArrayProxiesJSONBody) FromPostArrayProxiesJSONBody0(v PostArrayProxiesJSONBody0) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostArrayProxiesJSONBody0 performs a merge with any union data inside the PostArrayProxiesJSONBody, using the provided PostArrayProxiesJSONBody0
+func (t *PostArrayProxiesJSONBody) MergePostArrayProxiesJSONBody0(v PostArrayProxiesJSONBody0) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+// AsPostArrayProxiesJSONBody1 returns the union data inside the PostArrayProxiesJSONBody as a PostArrayProxiesJSONBody1
+func (t PostArrayProxiesJSONBody) AsPostArrayProxiesJSONBody1() (PostArrayProxiesJSONBody1, error) {
+	var body PostArrayProxiesJSONBody1
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromPostArrayProxiesJSONBody1 overwrites any union data inside the PostArrayProxiesJSONBody as the provided PostArrayProxiesJSONBody1
+func (t *PostArrayProxiesJSONBody) FromPostArrayProxiesJSONBody1(v PostArrayProxiesJSONBody1) error {
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergePostArrayProxiesJSONBody1 performs a merge with any union data inside the PostArrayProxiesJSONBody, using the provided PostArrayProxiesJSONBody1
+func (t *PostArrayProxiesJSONBody) MergePostArrayProxiesJSONBody1(v PostArrayProxiesJSONBody1) error {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t PostArrayProxiesJSONBody) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *PostArrayProxiesJSONBody) UnmarshalJSON(b []byte) error {
 	err := t.union.UnmarshalJSON(b)
 	return err
 }

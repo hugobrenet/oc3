@@ -1446,6 +1446,418 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /arrays/{array_id}:
+    get:
+      operationId: GetArray
+      description: |
+        Show a storage array, given by its name or its id.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostArray
+      description: |
+        Change the comment of a storage array, the property the agents do not
+        feed. Requires the StorageManager privilege. Logged (array.change).
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                array_comment:
+                  type: string
+                  description: Free text about the array, 255 characters at most.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /arrays_diskgroups:
+    get:
+      operationId: GetArraysDiskgroups
+      description: |
+        List the disk groups of all the storage arrays, their sizes in MB, the
+        columns of their array reachable as stor_array.<column>.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiskGroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /arrays/{array_id}/diskgroups/{dg_id}:
+    get:
+      operationId: GetArrayDiskgroup
+      description: |
+        Show a disk group of a storage array, by its id or its name. The array 0
+        looks for it in all the arrays.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id, 0 for any
+          schema:
+            type: string
+        - in: path
+          name: dg_id
+          required: true
+          description: Disk group id or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiskGroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /arrays/{array_id}/proxies:
+    get:
+      operationId: GetArrayProxies
+      description: |
+        List the proxies of a storage array: the nodes whose agent inventories it.
+        The columns of the node read as nodes.<column>.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayProxyListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostArrayProxies
+      description: |
+        Same as POST /arrays/{array_id}/proxies/{node_id}, the nodes given by the
+        node_id key of the body: one entry or a list.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteArrayProxies
+      description: |
+        Same as DELETE /arrays/{array_id}/proxies/{node_id}, the nodes given by
+        the node_id key of the body: one entry or a list.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /arrays/{array_id}/proxies/{node_id}:
+    post:
+      operationId: PostArrayProxy
+      description: |
+        Set a node, by its id or its name, as a proxy of the storage array.
+        Requires the StorageManager privilege. Logged (storage.array.proxy.add).
+        A proxy already set answers with an info message.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+        - in: path
+          name: node_id
+          required: true
+          description: Node id or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteArrayProxy
+      description: |
+        Unset a node as a proxy of the storage array: the id of a node deleted
+        since is accepted. Requires the StorageManager privilege. Logged
+        (storage.array.proxy.del). A proxy already unset answers with an info message.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+        - in: path
+          name: node_id
+          required: true
+          description: Node id or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /arrays/{array_id}/targets:
+    get:
+      operationId: GetArrayTargets
+      description: |
+        List the target ports of a storage array.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayTargetListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /arrays/{array_id}/disks:
     get:
       operationId: GetArrayDisks
@@ -1625,6 +2037,59 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteArrayDiskgroupQuotas
+      description: |
+        Same as DELETE /arrays/{array_id}/diskgroups/{dg_id}/quotas/{quota_id},
+        the quotas given by the id key of the body: one entry or a list.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array id or name
+          schema:
+            type: string
+        - in: path
+          name: dg_id
+          required: true
+          description: Disk group id
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
 
   /arrays/{array_id}/diskgroups/{dg_id}/quotas/{quota_id}:
     post:
@@ -1724,6 +2189,54 @@ paths:
           $ref: '#/components/responses/401'
         403:
           $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    get:
+      operationId: GetArrayDiskgroupQuota
+      description: |
+        Show a quota of a disk group, as GET /arrays/{array_id}/diskgroups/{dg_id}/quotas
+        lists them: a user who is not a Manager or a StorageManager sees those of
+        the applications their groups are responsible for.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array id or name
+          schema:
+            type: string
+        - in: path
+          name: dg_id
+          required: true
+          description: Disk group id
+          schema:
+            type: integer
+            format: int64
+        - in: path
+          name: quota_id
+          required: true
+          description: Quota id
+          schema:
+            type: integer
+            format: int64
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotaListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -30182,6 +30695,73 @@ components:
           type: integer
         array_updated:
           type: string
+
+
+    ArrayProxyRow:
+      type: object
+      description: |
+        A node inventorying a storage array. Every property is optional: the
+        props query parameter selects them; the columns of the node read as
+        nodes.<column>.
+      properties:
+        id:
+          type: integer
+        array_id:
+          type: string
+        node_id:
+          type: string
+      additionalProperties: true
+
+    ArrayProxyListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ArrayProxyRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    ArrayTargetRow:
+      type: object
+      description: |
+        A target port of a storage array. Every property is optional: the props
+        query parameter selects them.
+      properties:
+        id:
+          type: integer
+        array_id:
+          type: string
+        array_tgtid:
+          type: string
+        updated:
+          type: string
+
+    ArrayTargetListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ArrayTargetRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
 
     ArrayListResponse:
       type: object
