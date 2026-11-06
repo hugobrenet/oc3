@@ -2294,6 +2294,9 @@ type AssistantTitleRequest struct {
 	Title string `json:"title"`
 }
 
+// AssistantTools The tools the agent lists, as it gives them.
+type AssistantTools map[string]interface{}
+
 // AuthInfo defines model for AuthInfo.
 type AuthInfo struct {
 	// Basic Whether users may sign in with their collector password

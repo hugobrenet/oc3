@@ -6296,6 +6296,62 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /assistant/tools:
+    get:
+      operationId: GetAssistantTools
+      description: |
+        The tools of the MCP the model may call for the caller, as the agent lists
+        them: name, title, description, arguments, and whether a call needs the
+        confirmation of the user. The assistant shows them to the user.
+
+        Relayed by oc3 to the AI agent, at the base_url and path of
+        server.assistant, with the access token of the caller's single sign-on
+        session, or the bearer token of the request; nothing else of the
+        browser's request is forwarded. The agent's answers and error codes are
+        returned as they are.
+      tags:
+        - assistant
+      responses:
+        200:
+          description: The tools.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantTools'
+        401:
+          description: No access token for the caller (assistant_token_unavailable), or the agent refused it.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        403:
+          description: Not while impersonating (assistant_forbidden).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        404:
+          description: The assistant is not configured (assistant_disabled), or the agent lists no tools (not_found).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        502:
+          description: The agent could not be reached, or answered badly (assistant_unreachable).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+        503:
+          description: The agent is unavailable.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantError'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /assistant/conversations/{conversation_id}/turns/{turn_id}/feedback:
     parameters:
       - in: path
@@ -23648,6 +23704,10 @@ components:
     AssistantCapabilities:
       type: object
       description: The AG-UI AgentCapabilities of the agent.
+      additionalProperties: true
+    AssistantTools:
+      type: object
+      description: The tools the agent lists, as it gives them.
       additionalProperties: true
     AssistantError:
       type: object

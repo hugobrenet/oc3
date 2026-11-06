@@ -267,6 +267,12 @@ func (a *Api) GetAssistantCapabilities(c echo.Context) error {
 	return a.assistantRelay(c, http.MethodGet, "/capabilities", nil, 0, false)
 }
 
+// GetAssistantTools handles GET /assistant/tools: the tools of the MCP the
+// model may call for the caller, as the agent lists them.
+func (a *Api) GetAssistantTools(c echo.Context) error {
+	return a.assistantRelay(c, http.MethodGet, "/tools", nil, 0, false)
+}
+
 // PutAssistantFeedback handles PUT /assistant/conversations/{conversation_id}/turns/{turn_id}/feedback.
 func (a *Api) PutAssistantFeedback(c echo.Context, conversationId string, turnId string) error {
 	if !regexpAssistantID.MatchString(turnId) {
