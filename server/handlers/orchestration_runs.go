@@ -47,6 +47,31 @@ func targetFailed(status string) bool {
 	return false
 }
 
+// failuresTolerated tells whether a step goes on with failed of its total
+// targets failed: none, or fewer than its failure threshold, a number of
+// targets or a percentage of them.
+func failuresTolerated(step server.OrchestrationStep, failed, total int) bool {
+	th := step.FailureThreshold
+	if failed == 0 {
+		return true
+	}
+	if th == nil {
+		return false
+	}
+	if th.Unit == server.Percent {
+		return failed*100 < th.Value*total
+	}
+	return failed < th.Value
+}
+
+// thresholdText says a failure threshold in a run message: "3" or "10%".
+func thresholdText(th *server.OrchestrationFailureThreshold) string {
+	if th.Unit == server.Percent {
+		return fmt.Sprintf("%d%%", th.Value)
+	}
+	return fmt.Sprint(th.Value)
+}
+
 // failedWords say in the message of a failed run what happened to the target.
 var failedWords = map[string]string{
 	"failed":    "failed",
@@ -598,9 +623,10 @@ func (a *Api) syncOrchestrationTargets(ctx context.Context, runID int, plan []se
 }
 
 // advanceOrchestrationStep advances the current step of a running run: fails the
-// run when a target failed and nothing runs any longer, ends the step when all
-// its targets succeeded, or queues the next of its targets its pace allows. It
-// tells whether the run went on to the next step.
+// run when a target failed, or as many as its failure threshold, and nothing
+// runs any longer, ends the step when all its targets are done, or queues the
+// next of its targets its pace allows. It tells whether the run went on to the
+// next step.
 func (a *Api) advanceOrchestrationStep(ctx context.Context, log *slog.Logger, run *cdb.OrchestrationRun, plan []server.OrchestrationStep) (bool, error) {
 	odb := a.ODB
 	cur := run.CurrentStep
@@ -611,12 +637,14 @@ func (a *Api) advanceOrchestrationStep(ctx context.Context, log *slog.Logger, ru
 	}
 	var (
 		failed   *cdb.OrchestrationRunTarget
+		nFailed  int
 		inFlight int
 		waiting  []cdb.OrchestrationRunTarget
 	)
 	for i, t := range targets {
 		switch {
 		case targetFailed(t.Status):
+			nFailed++
 			if failed == nil {
 				failed = &targets[i]
 			}
@@ -627,7 +655,7 @@ func (a *Api) advanceOrchestrationStep(ctx context.Context, log *slog.Logger, ru
 		}
 	}
 
-	if failed != nil {
+	if !failuresTolerated(step, nFailed, len(targets)) {
 		// The step failed: what did not start does not, and the run ends once
 		// what runs is done.
 		if len(waiting) > 0 {
@@ -646,6 +674,10 @@ func (a *Api) advanceOrchestrationStep(ctx context.Context, log *slog.Logger, ru
 		if reason != "" {
 			message += ": " + reason
 		}
+		if th := step.FailureThreshold; th != nil {
+			message = fmt.Sprintf("step %d: %d of %d targets failed, the threshold is %s; first: %s",
+				cur+1, nFailed, len(targets), thresholdText(th), strings.TrimPrefix(message, fmt.Sprintf("step %d: ", cur+1)))
+		}
 		if err := odb.SetOrchestrationRunStep(ctx, run.ID, cur, "failed"); err != nil {
 			return false, err
 		}
@@ -661,7 +693,8 @@ func (a *Api) advanceOrchestrationStep(ctx context.Context, log *slog.Logger, ru
 	}
 
 	if len(waiting) == 0 && inFlight == 0 {
-		// Every target succeeded: the next step starts, or the run ends.
+		// Every target succeeded, or fewer failed than the threshold: the next
+		// step starts, or the run ends.
 		if err := odb.SetOrchestrationRunStep(ctx, run.ID, cur, "succeeded"); err != nil {
 			return false, err
 		}
@@ -700,7 +733,8 @@ func (a *Api) advanceOrchestrationStep(ctx context.Context, log *slog.Logger, ru
 			nodeID: t.NodeID, svcID: t.SvcID, clusterID: t.ClusterID, label: t.Label,
 		})
 		if err != nil {
-			// Refused: the step fails, at the next tick, once what runs is done.
+			// Refused: a failed target, which fails the step at the next tick, once
+			// what runs is done, unless under its failure threshold.
 			return false, odb.SetOrchestrationTargetDone(ctx, t.ID, "refused", nil, nil, nil, refusalMessage(err))
 		}
 		if err := odb.SetOrchestrationTargetQueued(ctx, t.ID, queued.ID, queued.Command); err != nil {

@@ -872,6 +872,24 @@ func (e ObsolescenceSettingRowObsType) Valid() bool {
 	}
 }
 
+// Defines values for OrchestrationFailureThresholdUnit.
+const (
+	Count   OrchestrationFailureThresholdUnit = "count"
+	Percent OrchestrationFailureThresholdUnit = "percent"
+)
+
+// Valid indicates whether the value is a known member of the OrchestrationFailureThresholdUnit enum.
+func (e OrchestrationFailureThresholdUnit) Valid() bool {
+	switch e {
+	case Count:
+		return true
+	case Percent:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for OrchestrationRunStatus.
 const (
 	OrchestrationRunStatusCancelled OrchestrationRunStatus = "cancelled"
@@ -5479,6 +5497,19 @@ type OrchestrationCheckTarget struct {
 	SvcId   *string `json:"svc_id,omitempty"`
 }
 
+// OrchestrationFailureThreshold The failed targets (failed, refused, timed out or cancelled) a step goes
+// on with: it succeeds, the run going on with the next step, while they
+// are fewer than value, a number of targets (unit count) or a percentage
+// of the targets of the step (unit percent, 1 to 100). The step fails, its
+// waiting targets not run, as soon as they reach it.
+type OrchestrationFailureThreshold struct {
+	Unit  OrchestrationFailureThresholdUnit `json:"unit"`
+	Value int                               `json:"value"`
+}
+
+// OrchestrationFailureThresholdUnit defines model for OrchestrationFailureThreshold.Unit.
+type OrchestrationFailureThresholdUnit string
+
 // OrchestrationInput defines model for OrchestrationInput.
 type OrchestrationInput struct {
 	Description *string             `json:"description,omitempty"`
@@ -5670,10 +5701,18 @@ type OrchestrationRunTargetStatus string
 // an instance, applies to instances only. pace says how many targets run at
 // a time: all, one (one after the other) or batch (batch_size at a time).
 // timeout, in seconds, fails a target whose action has not finished by
-// then; 0 means no limit.
+// then; 0 means no limit. failure_threshold lets the run go on past
+// failed targets: without it, the first target failing fails the step.
 type OrchestrationStep struct {
 	Action    string `json:"action"`
 	BatchSize *int   `json:"batch_size,omitempty"`
+
+	// FailureThreshold The failed targets (failed, refused, timed out or cancelled) a step goes
+	// on with: it succeeds, the run going on with the next step, while they
+	// are fewer than value, a number of targets (unit count) or a percentage
+	// of the targets of the step (unit percent, 1 to 100). The step fails, its
+	// waiting targets not run, as soon as they reach it.
+	FailureThreshold *OrchestrationFailureThreshold `json:"failure_threshold,omitempty"`
 
 	// Kind What the action of a step acts on: a service as a whole, the instance of a
 	// service on a node, a node, or a cluster.

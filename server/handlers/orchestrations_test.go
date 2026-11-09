@@ -50,6 +50,10 @@ func TestValidateOrchestration(t *testing.T) {
 			Name: "thaw", Action: "thaw", Kind: server.OrchestrationTargetKindService, Pace: server.All,
 			Targets: server.OrchestrationTargets{Mode: server.SameAs, Step: n(0)},
 		}}, ""},
+		{"failure threshold of 0", []server.OrchestrationStep{withThreshold(freeze, 0, server.Count)}, "failure_threshold must be 1 or more"},
+		{"failure threshold over 100%", []server.OrchestrationStep{withThreshold(freeze, 101, server.Percent)}, "from 1 to 100"},
+		{"failure threshold unit", []server.OrchestrationStep{withThreshold(freeze, 2, "half")}, `unknown failure_threshold unit "half"`},
+		{"failure threshold", []server.OrchestrationStep{withThreshold(freeze, 10, server.Percent)}, ""},
 		{"filterset without id", []server.OrchestrationStep{{
 			Name: "x", Action: "freeze", Kind: server.OrchestrationTargetKindCluster, Pace: server.All,
 			Targets: server.OrchestrationTargets{Mode: server.Filterset},
@@ -63,6 +67,38 @@ func TestValidateOrchestration(t *testing.T) {
 				t.Fatalf("unexpected error: %s", err)
 			case tc.err != "" && (err == nil || !strings.Contains(err.Error(), tc.err)):
 				t.Fatalf("want an error with %q, got %v", tc.err, err)
+			}
+		})
+	}
+}
+
+func withThreshold(step server.OrchestrationStep, value int, unit server.OrchestrationFailureThresholdUnit) server.OrchestrationStep {
+	step.FailureThreshold = &server.OrchestrationFailureThreshold{Value: value, Unit: unit}
+	return step
+}
+
+func TestFailuresTolerated(t *testing.T) {
+	step := server.OrchestrationStep{}
+	cases := []struct {
+		name          string
+		step          server.OrchestrationStep
+		failed, total int
+		want          bool
+	}{
+		{"no threshold, no failure", step, 0, 10, true},
+		{"no threshold, one failure", step, 1, 10, false},
+		{"under a count", withThreshold(step, 3, server.Count), 2, 10, true},
+		{"at a count", withThreshold(step, 3, server.Count), 3, 10, false},
+		{"under a percentage", withThreshold(step, 10, server.Percent), 1, 20, true},
+		{"at a percentage", withThreshold(step, 10, server.Percent), 2, 20, false},
+		{"percentage of few targets", withThreshold(step, 10, server.Percent), 1, 5, false},
+		{"100%, one target left", withThreshold(step, 100, server.Percent), 4, 5, true},
+		{"100%, all failed", withThreshold(step, 100, server.Percent), 5, 5, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := failuresTolerated(tc.step, tc.failed, tc.total); got != tc.want {
+				t.Fatalf("failuresTolerated(%d of %d) = %v, want %v", tc.failed, tc.total, got, tc.want)
 			}
 		})
 	}
