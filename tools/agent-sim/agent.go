@@ -35,6 +35,9 @@ type (
 		ChangesPerHour float64
 		ActionsPerDay  float64
 		ErrorRatio     float64
+		// InventorySpread is the time to send the first inventory pushes of
+		// all the nodes, the daily interval when zero.
+		InventorySpread time.Duration
 		// NoInventory leaves out the node pushes, for a load of the status
 		// path alone.
 		NoInventory bool
@@ -346,6 +349,10 @@ func (s *sim) nodeLoop(ctx context.Context, n *node, dequeue <-chan struct{}) {
 		send func()
 	}
 	var pushes []*push
+	spread := s.run.InventorySpread
+	if spread <= 0 {
+		spread = s.run.DailyInterval
+	}
 	if !s.run.NoInventory {
 		for _, p := range []struct {
 			name string
@@ -358,7 +365,23 @@ func (s *sim) nodeLoop(ctx context.Context, n *node, dequeue <-chan struct{}) {
 			}},
 			{"disks", func() { _, _ = s.do(ctx, n, http.MethodPost, "/node/disk", nodeDisksBody(s.spec, n), nil) }},
 		} {
-			pushes = append(pushes, &push{name: p.name, send: p.send, next: now.Add(time.Duration(r.Int64N(int64(s.run.DailyInterval))))})
+			pushes = append(pushes, &push{name: p.name, send: p.send, next: now.Add(time.Duration(r.Int64N(int64(spread))))})
+		}
+		// The first node of the k-th cluster is the proxy of the k-th array.
+		if ai := n.cluster.idx; n.idx == 0 && ai < s.spec.Arrays {
+			body := arrayBody(s.spec, s.fleet, ai)
+			pushes = append(pushes, &push{name: "array", next: now.Add(time.Duration(r.Int64N(int64(spread)))), send: func() {
+				_, _ = s.do(ctx, n, http.MethodPost, "/array", body, nil)
+			}})
+		}
+		// The first node of the fleet inventories the san switches.
+		if n.cluster.idx == 0 && n.idx == 0 {
+			for _, sw := range fleetSANSwitches(s.spec, s.fleet) {
+				body := sanSwitchBody(s.spec, s.fleet, sw)
+				pushes = append(pushes, &push{name: "switch", next: now.Add(time.Duration(r.Int64N(int64(spread)))), send: func() {
+					_, _ = s.do(ctx, n, http.MethodPost, "/sanswitch", body, nil)
+				}})
+			}
 		}
 	}
 	ticker := time.NewTicker(time.Second)

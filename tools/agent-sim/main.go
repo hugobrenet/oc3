@@ -67,6 +67,16 @@ func fleetFlags(fs *flag.FlagSet) *fleetSpec {
 	fs.IntVar(&spec.NodesPerCluster, "nodes-per-cluster", 2, "nodes a cluster")
 	fs.IntVar(&spec.Services, "services", 50, "services count, spread over the clusters")
 	fs.IntVar(&spec.Resources, "resources", 8, "average resources a service")
+	fs.Func("apps", "comma-separated apps of the clusters, round robin (default: the nodes of --app, the services of the default app)", func(v string) error {
+		spec.Apps = nil
+		for _, a := range strings.Split(v, ",") {
+			if a = strings.TrimSpace(a); a != "" {
+				spec.Apps = append(spec.Apps, a)
+			}
+		}
+		return nil
+	})
+	fs.IntVar(&spec.Arrays, "arrays", 0, "pure arrays holding the disks of the services, 0 for local disks")
 	fs.StringVar(&spec.App, "app", "SIM", "app of the nodes")
 	fs.StringVar(&spec.Team, "team", "SimOps", "team responsible of the nodes and ops team of the app")
 	return spec
@@ -87,6 +97,7 @@ func runFlags(fs *flag.FlagSet) *runSpec {
 	fs.Float64Var(&run.ChangesPerHour, "changes-per-hour", 0.5, "status changes an hour, by service")
 	fs.Float64Var(&run.ActionsPerDay, "actions-per-day", 4, "actions a day, by service")
 	fs.Float64Var(&run.ErrorRatio, "error-ratio", 0.05, "share of the actions ending in error")
+	fs.DurationVar(&run.InventorySpread, "inventory-spread", 0, "time to send the first inventory pushes of all the nodes, 0 for the daily interval")
 	fs.BoolVar(&run.NoInventory, "no-inventory", false, "leave out the node stats and inventory pushes")
 	return run
 }
@@ -116,7 +127,7 @@ func cmdPlan(args []string) error {
 	actions := 2 * services * run.ActionsPerDay / 86400
 	resinfo := instances / run.InfoInterval.Seconds()
 	stats := nodes / run.StatsInterval.Seconds()
-	daily := 4 * nodes / run.DailyInterval.Seconds()
+	daily := (4*nodes + float64(spec.Arrays)) / run.DailyInterval.Seconds()
 	if run.NoInventory {
 		stats, daily = 0, 0
 	}
@@ -131,7 +142,7 @@ func cmdPlan(args []string) error {
 		v    float64
 	}{
 		{"daemon/status", status}, {"daemon/ping", ping}, {"instance/action (begin+end)", actions},
-		{"instance/resource_info", resinfo}, {"node/stats", stats}, {"node/system,checks,disk", daily},
+		{"instance/resource_info", resinfo}, {"node/stats", stats}, {"node/system,checks,disk,array", daily},
 	} {
 		fmt.Printf("  %-28s %8.2f\n", l.name, l.v)
 	}
@@ -161,8 +172,10 @@ func cmdSetup(args []string) error {
 	}
 	w := os.Stdout
 	fmt.Fprintf(w, "-- agent-sim fleet %q seed %d: %d nodes\n", spec.Prefix, spec.Seed, f.nodeCount())
-	fmt.Fprintf(w, "INSERT IGNORE INTO apps (app, app_domain, app_team_ops, description) VALUES (%s, 'sim', %s, 'agent-sim load test');\n",
-		sqlQuote(spec.App), sqlQuote(spec.Team))
+	for _, app := range append([]string{spec.App}, spec.Apps...) {
+		fmt.Fprintf(w, "INSERT IGNORE INTO apps (app, app_domain, app_team_ops, description) VALUES (%s, 'sim', %s, 'agent-sim load test');\n",
+			sqlQuote(app), sqlQuote(spec.Team))
+	}
 	var nodes, auth []string
 	flush := func() {
 		if len(nodes) > 0 {
@@ -175,9 +188,13 @@ func cmdSetup(args []string) error {
 		nodes, auth = nil, nil
 	}
 	for _, c := range f.clusters {
+		app := spec.App
+		if c.app != "" {
+			app = c.app
+		}
 		for _, n := range c.nodes {
 			nodes = append(nodes, fmt.Sprintf("(%s, %s, %s, %s, 'PRD', %s, 'Linux', NOW())",
-				sqlQuote(n.id), sqlQuote(n.name), sqlQuote(c.id), sqlQuote(spec.App), sqlQuote(spec.Team)))
+				sqlQuote(n.id), sqlQuote(n.name), sqlQuote(c.id), sqlQuote(app), sqlQuote(spec.Team)))
 			auth = append(auth, fmt.Sprintf("(%s, %s, %s)", sqlQuote(n.name), sqlQuote(n.uuid), sqlQuote(n.id)))
 			if len(nodes) == 500 {
 				flush()
@@ -232,6 +249,20 @@ func cmdTeardown(args []string) error {
 	fmt.Fprintf(w, "DELETE FROM auth_node WHERE node_id IN (SELECT node_id FROM sim_nodes);\n")
 	fmt.Fprintf(w, "DELETE FROM nodes WHERE node_id IN (SELECT node_id FROM sim_nodes);\n")
 	fmt.Fprintf(w, "DELETE FROM clusters WHERE cluster_id IN (SELECT cluster_id FROM sim_clusters);\n")
+	// The arrays of the fleet (--arrays), and the disks they hold.
+	arrays := sqlQuote(*prefix + "-fa%")
+	fmt.Fprintf(w, "CREATE TEMPORARY TABLE sim_arrays (id int PRIMARY KEY, array_name varchar(128)) AS SELECT id, array_name FROM stor_array WHERE array_name LIKE %s;\n", arrays)
+	fmt.Fprintf(w, "DELETE FROM diskinfo WHERE disk_arrayid IN (SELECT array_name FROM sim_arrays);\n")
+	fmt.Fprintf(w, "DELETE FROM stor_array_dg_quota WHERE dg_id IN (SELECT id FROM stor_array_dg WHERE array_id IN (SELECT id FROM sim_arrays));\n")
+	for _, t := range []string{"stor_array_dg", "stor_array_tgtid", "stor_array_proxy"} {
+		fmt.Fprintf(w, "DELETE FROM %s WHERE array_id IN (SELECT id FROM sim_arrays);\n", t)
+	}
+	fmt.Fprintf(w, "DELETE FROM stor_array WHERE id IN (SELECT id FROM sim_arrays);\n")
+	// The san switches of the fleet and their zoning.
+	fmt.Fprintf(w, "DELETE FROM switches WHERE sw_name LIKE %s;\n", sqlQuote(*prefix+"-fab%"))
+	for _, t := range []string{"san_zone", "san_zone_alias"} {
+		fmt.Fprintf(w, "DELETE FROM %s WHERE cfg LIKE %s;\n", t, sqlQuote(strings.ToUpper(*prefix)+"\\_FAB%"))
+	}
 	return nil
 }
 
