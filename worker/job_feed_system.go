@@ -439,6 +439,41 @@ func (d *jobFeedSystem) hardware(ctx context.Context) error {
 	return nil
 }
 
+// optionalNodeProperties are the node properties only set from the agent
+// config, that the agent posts with the "default" source when unset.
+var optionalNodeProperties = map[string]bool{
+	"asset_env":    true,
+	"connect_to":   true,
+	"loc_addr":     true,
+	"loc_building": true,
+	"loc_city":     true,
+	"loc_country":  true,
+	"loc_floor":    true,
+	"loc_rack":     true,
+	"loc_room":     true,
+	"loc_zip":      true,
+	"sec_zone":     true,
+	"team_integ":   true,
+	"team_support": true,
+}
+
+// dropUnsetOptionalNodeProperties removes from data the optional properties
+// the agent has no value for (source "default"), so they are not reset in the
+// nodes table: they may have been set on the collector side. This is what the
+// old collector did with v2 agents, which did not post them.
+func dropUnsetOptionalNodeProperties(data map[string]any) {
+	for k, v := range data {
+		if !optionalNodeProperties[k] {
+			continue
+		}
+		if m, ok := v.(map[string]any); ok {
+			if source, _ := m["source"].(string); source == "default" || source == "" {
+				delete(data, k)
+			}
+		}
+	}
+}
+
 func (d *jobFeedSystem) properties(ctx context.Context) error {
 	tableName := "nodes"
 	data, ok := d.data["properties"].(map[string]any)
@@ -446,6 +481,8 @@ func (d *jobFeedSystem) properties(ctx context.Context) error {
 		slog.Warn("unsupported system properties format")
 		return nil
 	}
+
+	dropUnsetOptionalNodeProperties(data)
 
 	nodeID := d.nodeID
 	now := d.now
