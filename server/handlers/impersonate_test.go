@@ -26,7 +26,9 @@ func runImpersonate(t *testing.T, mode string, groups []string, header string) (
 	ext.Set(xauth.XUserID, "7")
 	c.Set("user", auth.NewUserInfo("admin@example.com", "7", groups, ext))
 	c.Set("groups", groups)
-	c.Set(XAuthMode, mode)
+	if mode != "" {
+		c.Set(XAuthMode, mode)
+	}
 	called := false
 	err := ImpersonateMiddleware(nil)(func(c echo.Context) error {
 		called = true
@@ -51,6 +53,7 @@ func TestImpersonateMiddleware(t *testing.T) {
 		code   int
 	}{
 		{"no header", AuthModeUser, nil, "", 0},
+		{"public route", "", nil, "8", 0},
 		{"own id", AuthModeUser, privileged, "7", 0},
 		{"no privilege", AuthModeUser, []string{"Impersonate", "UserManager"}, "8", http.StatusForbidden},
 		{"node", AuthModeNode, privileged, "8", http.StatusForbidden},

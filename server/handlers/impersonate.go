@@ -52,6 +52,12 @@ func ImpersonateMiddleware(db *sql.DB) echo.MiddlewareFunc {
 			if ident == "" {
 				return next(c)
 			}
+			// A public route (/auth/info, the OIDC sign-in endpoints...) is
+			// served to nobody in particular: the SPA sends the header with every
+			// request, refusing it there would end the impersonation at once.
+			if _, authenticated := c.Get(XAuthMode).(string); !authenticated {
+				return next(c)
+			}
 			refuse := func(code int, format string, args ...any) error {
 				c.Response().Header().Set(ImpersonationRefusedHeader, "true")
 				return JSONProblemf(c, code, format, args...)
