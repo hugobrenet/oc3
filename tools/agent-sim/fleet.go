@@ -17,8 +17,15 @@ type (
 		NodesPerCluster int
 		Services        int
 		Resources       int
-		App             string
-		Team            string
+		// Arrays is the number of storage arrays holding the disks of the
+		// services, 0 for local disks.
+		Arrays int
+		// Apps are the apps of the clusters, round robin: the nodes and
+		// the services of a cluster are of its app. Empty, the nodes are of
+		// App and the services of the "default" app, as a fresh agent says.
+		Apps []string
+		App  string
+		Team string
 	}
 
 	fleet struct {
@@ -30,6 +37,7 @@ type (
 		idx      int
 		id       string
 		name     string
+		app      string
 		nodes    []*node
 		services []*service
 	}
@@ -47,6 +55,7 @@ type (
 		path      string
 		name      string
 		topology  string
+		app       string
 		resources []resource
 		// primary is the index in the cluster nodes of the node a failover
 		// service runs on.
@@ -106,6 +115,9 @@ func newFleet(spec fleetSpec) (*fleet, error) {
 			id:   spec.uuid("cluster", ci),
 			name: fmt.Sprintf("%s-c%04d", spec.Prefix, ci),
 		}
+		if len(spec.Apps) > 0 {
+			c.app = spec.Apps[ci%len(spec.Apps)]
+		}
 		for ni := 0; ni < spec.NodesPerCluster; ni++ {
 			gi := ci*spec.NodesPerCluster + ni
 			if gi >= spec.Nodes {
@@ -140,7 +152,11 @@ func newService(spec fleetSpec, c *cluster, si int) *service {
 		name:     name,
 		path:     ns + "/svc/" + name,
 		topology: "failover",
+		app:      "default",
 		primary:  r.IntN(len(c.nodes)),
+	}
+	if c.app != "" {
+		s.app = c.app
 	}
 	if len(c.nodes) > 1 && r.IntN(5) == 0 {
 		s.topology = "flex"

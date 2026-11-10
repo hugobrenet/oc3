@@ -1446,6 +1446,418 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /arrays/{array_id}:
+    get:
+      operationId: GetArray
+      description: |
+        Show a storage array, given by its name or its id.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostArray
+      description: |
+        Change the comment of a storage array, the property the agents do not
+        feed. Requires the StorageManager privilege. Logged (array.change).
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                array_comment:
+                  type: string
+                  description: Free text about the array, 255 characters at most.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /arrays_diskgroups:
+    get:
+      operationId: GetArraysDiskgroups
+      description: |
+        List the disk groups of all the storage arrays, their sizes in MB, the
+        columns of their array reachable as stor_array.<column>.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiskGroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /arrays/{array_id}/diskgroups/{dg_id}:
+    get:
+      operationId: GetArrayDiskgroup
+      description: |
+        Show a disk group of a storage array, by its id or its name. The array 0
+        looks for it in all the arrays.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id, 0 for any
+          schema:
+            type: string
+        - in: path
+          name: dg_id
+          required: true
+          description: Disk group id or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiskGroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /arrays/{array_id}/proxies:
+    get:
+      operationId: GetArrayProxies
+      description: |
+        List the proxies of a storage array: the nodes whose agent inventories it.
+        The columns of the node read as nodes.<column>.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayProxyListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostArrayProxies
+      description: |
+        Same as POST /arrays/{array_id}/proxies/{node_id}, the nodes given by the
+        node_id key of the body: one entry or a list.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteArrayProxies
+      description: |
+        Same as DELETE /arrays/{array_id}/proxies/{node_id}, the nodes given by
+        the node_id key of the body: one entry or a list.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /arrays/{array_id}/proxies/{node_id}:
+    post:
+      operationId: PostArrayProxy
+      description: |
+        Set a node, by its id or its name, as a proxy of the storage array.
+        Requires the StorageManager privilege. Logged (storage.array.proxy.add).
+        A proxy already set answers with an info message.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+        - in: path
+          name: node_id
+          required: true
+          description: Node id or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteArrayProxy
+      description: |
+        Unset a node as a proxy of the storage array: the id of a node deleted
+        since is accepted. Requires the StorageManager privilege. Logged
+        (storage.array.proxy.del). A proxy already unset answers with an info message.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+        - in: path
+          name: node_id
+          required: true
+          description: Node id or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /arrays/{array_id}/targets:
+    get:
+      operationId: GetArrayTargets
+      description: |
+        List the target ports of a storage array.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array name or id
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArrayTargetListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /arrays/{array_id}/disks:
     get:
       operationId: GetArrayDisks
@@ -1625,6 +2037,59 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteArrayDiskgroupQuotas
+      description: |
+        Same as DELETE /arrays/{array_id}/diskgroups/{dg_id}/quotas/{quota_id},
+        the quotas given by the id key of the body: one entry or a list.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array id or name
+          schema:
+            type: string
+        - in: path
+          name: dg_id
+          required: true
+          description: Disk group id
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
 
   /arrays/{array_id}/diskgroups/{dg_id}/quotas/{quota_id}:
     post:
@@ -1724,6 +2189,54 @@ paths:
           $ref: '#/components/responses/401'
         403:
           $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    get:
+      operationId: GetArrayDiskgroupQuota
+      description: |
+        Show a quota of a disk group, as GET /arrays/{array_id}/diskgroups/{dg_id}/quotas
+        lists them: a user who is not a Manager or a StorageManager sees those of
+        the applications their groups are responsible for.
+      parameters:
+        - in: path
+          name: array_id
+          required: true
+          description: Storage array id or name
+          schema:
+            type: string
+        - in: path
+          name: dg_id
+          required: true
+          description: Disk group id
+          schema:
+            type: integer
+            format: int64
+        - in: path
+          name: quota_id
+          required: true
+          description: Quota id
+          schema:
+            type: integer
+            format: int64
+        - $ref: '#/components/parameters/inQueryProps'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuotaListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -2228,6 +2741,45 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteCharts
+      description: |
+        Same as DELETE /charts/{chart_id}, the ids given by the id key of the body:
+        one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
 
   /charts/{chart_id}:
     get:
@@ -2252,6 +2804,89 @@ paths:
                 $ref: '#/components/schemas/ChartListResponse'
         401:
           $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostChart
+      description: |
+        Change the name or the definition of a chart, logged (chart.change); a new
+        definition is recorded in its history. Requires the ReportsManager privilege and responsibility for the chart.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                chart_name:
+                  type: string
+                  description: New unique name of the chart.
+                chart_yaml:
+                  type: string
+                  description: New definition of the chart, in YAML, recorded in its history.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChartListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteChart
+      description: |
+        Delete a chart, with its publications and responsibles,
+        logged (chart.del). Its history is kept. Requires the ReportsManager privilege and responsibility for the chart.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -5100,6 +5735,35 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /safe/secrets:
+    get:
+      operationId: GetSafeSecrets
+      description: |
+        The secrets sealed with the safe master key apart from the safe files: those
+        of the form connectors and of the notification channels, stored encrypted in
+        their own rows. Their values are never returned: only what holds them and
+        the master key they are wrapped with, to see what depends on a key before
+        removing it (oc3 safe rewrap wraps them with the active key). A Manager sees
+        them all, an AlertsManager the notification channels, a FormsManager the
+        form connectors.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SafeSecretsResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
   /safe/upload:
     post:
       operationId: PostSafeUpload
@@ -7522,6 +8186,45 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteMetrics
+      description: |
+        Same as DELETE /metrics/{metric_id}, the ids given by the id key of the body:
+        one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
 
   /metrics/{metric_id}:
     get:
@@ -7619,6 +8322,40 @@ paths:
           $ref: '#/components/responses/404'
         409:
           $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteMetric
+      description: |
+        Delete a metric, with its publications, and its historized series,
+        logged (metric.del). Its history is kept. Requires the Manager privilege.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
         500:
           $ref: '#/components/responses/500'
       security:
@@ -7920,6 +8657,45 @@ paths:
       security:
         - basicAuth: [ ]
         - bearerAuth: [ ]
+    delete:
+      operationId: DeleteReports
+      description: |
+        Same as DELETE /reports/{report_id}, the ids given by the id key of the body:
+        one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
 
   /reports/{report_id}:
     get:
@@ -7944,6 +8720,89 @@ paths:
                 $ref: '#/components/schemas/ReportListResponse'
         401:
           $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostReport
+      description: |
+        Change the name or the definition of a report, logged (report.change); a new
+        definition is recorded in its history. Requires the ReportsManager privilege and responsibility for the report.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                report_name:
+                  type: string
+                  description: New unique name of the report.
+                report_yaml:
+                  type: string
+                  description: New definition of the report, in YAML, recorded in its history.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteReport
+      description: |
+        Delete a report, with its publications and responsibles,
+        logged (report.del). Its history is kept. Requires the ReportsManager privilege and responsibility for the report.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
         404:
           $ref: '#/components/responses/404'
         500:
@@ -10752,6 +11611,351 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /notifications/channels:
+    get:
+      operationId: GetNotificationChannels
+      description: |
+        The channels of the alert notifications: the mail lists and the Slack,
+        Mattermost, Teams and generic webhooks the subscriptions send to. Their
+        secrets (the webhook url, the signing secret) are never returned, only
+        whether each one is set. For the Managers and the AlertsManagers.
+      tags:
+        - notifications
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NotificationChannel'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostNotificationChannels
+      description: |
+        Create a channel. Its secrets are sealed with the safe master key
+        (safe.keys_file): without one, a webhook channel is refused. For the
+        Managers and the AlertsManagers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationChannelInput'
+      tags:
+        - notifications
+      responses:
+        200:
+          description: The channel created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannel'
+        400:
+          $ref: '#/components/responses/400'
+        409:
+          $ref: '#/components/responses/409'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+  /notifications/channels/{channel_id}:
+    get:
+      operationId: GetNotificationChannel
+      parameters:
+        - $ref: '#/components/parameters/inPathNotificationChannelId'
+      tags:
+        - notifications
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannel'
+        404:
+          $ref: '#/components/responses/404'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    put:
+      operationId: PutNotificationChannel
+      description: |
+        Replace a channel. A secret given replaces the one set, null removes it,
+        absent keeps it. For the Managers and the AlertsManagers.
+      parameters:
+        - $ref: '#/components/parameters/inPathNotificationChannelId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationChannelInput'
+      tags:
+        - notifications
+      responses:
+        200:
+          description: The channel replaced.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannel'
+        400:
+          $ref: '#/components/responses/400'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteNotificationChannel
+      description: Delete a channel and its subscriptions. For the Managers and the AlertsManagers.
+      parameters:
+        - $ref: '#/components/parameters/inPathNotificationChannelId'
+      tags:
+        - notifications
+      responses:
+        204:
+          description: Deleted.
+        404:
+          $ref: '#/components/responses/404'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+  /notifications/channels/{channel_id}/test:
+    post:
+      operationId: PostNotificationChannelTest
+      description: |
+        Send a test message to the channel, at once, whether it is enabled or not:
+        a sample alert, recorded nowhere. The answer tells whether the channel
+        accepted it. For the Managers and the AlertsManagers.
+      parameters:
+        - $ref: '#/components/parameters/inPathNotificationChannelId'
+      tags:
+        - notifications
+      responses:
+        200:
+          description: The outcome of the sending.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationChannelTestResult'
+        404:
+          $ref: '#/components/responses/404'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+  /notifications/deliveries:
+    get:
+      operationId: GetNotificationDeliveries
+      description: |
+        The notifications sent, being sent or failed: an alert and its recipient,
+        a subscription (channel and group) or the mail address of a user, as the
+        other lists: props, column filters, sort, pagination and value statistics.
+        Kept as long as the alert is in the dashboard, two days more for the
+        subscriptions announcing the resolutions. For the Managers and the
+        AlertsManagers.
+      parameters:
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryFilter'
+        - $ref: '#/components/parameters/inQueryGroupby'
+      tags:
+        - notifications
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationDeliveryListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+  /notifications/subscriptions:
+    get:
+      operationId: GetNotificationSubscriptions
+      description: |
+        The subscriptions of the groups to the channels: the alerts of a group,
+        those of the apps it is responsible for or all of them, from a severity,
+        sent to a channel. For the Managers and the AlertsManagers.
+      parameters:
+        - in: query
+          name: channel_id
+          description: Only the subscriptions to this channel.
+          schema:
+            type: integer
+            format: int64
+      tags:
+        - notifications
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - data
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NotificationSubscription'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    post:
+      operationId: PostNotificationSubscriptions
+      description: Create a subscription. For the Managers and the AlertsManagers.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationSubscriptionInput'
+      tags:
+        - notifications
+      responses:
+        200:
+          description: The subscription created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationSubscription'
+        400:
+          $ref: '#/components/responses/400'
+        409:
+          $ref: '#/components/responses/409'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+  /notifications/subscriptions/{subscription_id}:
+    put:
+      operationId: PutNotificationSubscription
+      description: Replace a subscription. For the Managers and the AlertsManagers.
+      parameters:
+        - $ref: '#/components/parameters/inPathNotificationSubscriptionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationSubscriptionInput'
+      tags:
+        - notifications
+      responses:
+        200:
+          description: The subscription replaced.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationSubscription'
+        400:
+          $ref: '#/components/responses/400'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteNotificationSubscription
+      description: Delete a subscription. For the Managers and the AlertsManagers.
+      parameters:
+        - $ref: '#/components/parameters/inPathNotificationSubscriptionId'
+      tags:
+        - notifications
+      responses:
+        204:
+          description: Deleted.
+        404:
+          $ref: '#/components/responses/404'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
   /obsolescence/settings:
     get:
       operationId: GetObsolescenceSettings
@@ -14352,6 +15556,61 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /users/self/notifications:
+    get:
+      operationId: GetUserSelfNotifications
+      description: |
+        The settings of the alert notifications of the signed-in user: whether
+        the new alerts of the apps their groups are responsible for are mailed to
+        them, from which level, after which delay, on which periods of the week.
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserNotifications'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    put:
+      operationId: PutUserSelfNotifications
+      description: |
+        Change the settings of the alert notifications of the signed-in user.
+        Not while impersonating. The periods are kept in the user preferences,
+        as notifications_periods.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserNotificationsInput'
+      tags:
+        - collector
+      responses:
+        200:
+          description: The settings saved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserNotifications'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
   /users/self/password:
     post:
       operationId: PostUserSelfPassword
@@ -20973,6 +22232,1684 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /reports/{report_id}/am_i_responsible:
+    get:
+      operationId: GetReportAmIResponsible
+      description: |
+        Tell whether the caller may change the report, as {"data": true} or
+        {"data": false}: the ReportsManager privilege and responsibility for the report.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: boolean
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/publications:
+    get:
+      operationId: GetReportPublications
+      description: |
+        List the groups the report is published to. Requires the report to be
+        published to the caller, unless a manager.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/publications/{group_id}:
+    post:
+      operationId: PostReportPublication
+      description: |
+        Publish the report to a group, logged (report.publication.add). A non-manager chooses among
+        their own groups; privilege groups are refused. Requires the ReportsManager privilege and responsibility for the report.
+        An existing link answers with an info message.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteReportPublication
+      description: |
+        Unpublish the report from a group, logged (report.publication.delete). Requires the ReportsManager privilege and responsibility for the report.
+        A missing link answers with an info message.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports_publications:
+    post:
+      operationId: PostReportsPublications
+      description: |
+        Same as POST /reports/{report_id}/publications/{group_id}, the report_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteReportsPublications
+      description: |
+        Same as DELETE /reports/{report_id}/publications/{group_id}, the report_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/responsibles:
+    get:
+      operationId: GetReportResponsibles
+      description: |
+        List the groups the report is the responsibility of. Requires the report to be
+        published to the caller, unless a manager.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/responsibles/{group_id}:
+    post:
+      operationId: PostReportResponsible
+      description: |
+        Make a group responsible for the report, logged (report.responsible.add). A non-manager chooses among
+        their own groups; privilege groups are refused. Requires the ReportsManager privilege and responsibility for the report.
+        An existing link answers with an info message.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteReportResponsible
+      description: |
+        Remove a responsible group from the report, logged (report.responsible.delete). Requires the ReportsManager privilege and responsibility for the report.
+        A missing link answers with an info message.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports_responsibles:
+    post:
+      operationId: PostReportsResponsibles
+      description: |
+        Same as POST /reports/{report_id}/responsibles/{group_id}, the report_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteReportsResponsibles
+      description: |
+        Same as DELETE /reports/{report_id}/responsibles/{group_id}, the report_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/revisions:
+    get:
+      operationId: GetReportRevisions
+      description: |
+        List the revisions of the report definition, from its git history, the
+        newest first, 300 at most: an empty list when the report is not published
+        to the caller.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormRevisionListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/revisions/{cid}:
+    get:
+      operationId: GetReportRevision
+      description: |
+        Show the report definition at a revision: empty when the revision holds
+        none, or when the report is not published to the caller.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormRevisionResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/diff/{cid}:
+    get:
+      operationId: GetReportDiff
+      description: |
+        Show the change made by a revision, or the differences between cid and
+        other when set, as git prints them: empty when the report is not published
+        to the caller.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+        - in: query
+          name: other
+          required: false
+          description: Another revision to compare cid with
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormDiffResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/rollback/{cid}:
+    post:
+      operationId: PostReportRollback
+      description: |
+        Restore the report definition of a revision, recorded as a new revision
+        and logged (report.rollback). Requires the ReportsManager privilege and responsibility for the report.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/am_i_responsible:
+    get:
+      operationId: GetChartAmIResponsible
+      description: |
+        Tell whether the caller may change the chart, as {"data": true} or
+        {"data": false}: the ReportsManager privilege and responsibility for the chart.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: boolean
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/publications:
+    get:
+      operationId: GetChartPublications
+      description: |
+        List the groups the chart is published to. Requires the chart to be
+        published to the caller, unless a manager.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/publications/{group_id}:
+    post:
+      operationId: PostChartPublication
+      description: |
+        Publish the chart to a group, logged (chart.publication.add). A non-manager chooses among
+        their own groups; privilege groups are refused. Requires the ReportsManager privilege and responsibility for the chart.
+        An existing link answers with an info message.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteChartPublication
+      description: |
+        Unpublish the chart from a group, logged (chart.publication.delete). Requires the ReportsManager privilege and responsibility for the chart.
+        A missing link answers with an info message.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts_publications:
+    post:
+      operationId: PostChartsPublications
+      description: |
+        Same as POST /charts/{chart_id}/publications/{group_id}, the chart_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteChartsPublications
+      description: |
+        Same as DELETE /charts/{chart_id}/publications/{group_id}, the chart_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/responsibles:
+    get:
+      operationId: GetChartResponsibles
+      description: |
+        List the groups the chart is the responsibility of. Requires the chart to be
+        published to the caller, unless a manager.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/responsibles/{group_id}:
+    post:
+      operationId: PostChartResponsible
+      description: |
+        Make a group responsible for the chart, logged (chart.responsible.add). A non-manager chooses among
+        their own groups; privilege groups are refused. Requires the ReportsManager privilege and responsibility for the chart.
+        An existing link answers with an info message.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteChartResponsible
+      description: |
+        Remove a responsible group from the chart, logged (chart.responsible.delete). Requires the ReportsManager privilege and responsibility for the chart.
+        A missing link answers with an info message.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts_responsibles:
+    post:
+      operationId: PostChartsResponsibles
+      description: |
+        Same as POST /charts/{chart_id}/responsibles/{group_id}, the chart_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteChartsResponsibles
+      description: |
+        Same as DELETE /charts/{chart_id}/responsibles/{group_id}, the chart_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/revisions:
+    get:
+      operationId: GetChartRevisions
+      description: |
+        List the revisions of the chart definition, from its git history, the
+        newest first, 300 at most: an empty list when the chart is not published
+        to the caller.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormRevisionListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/revisions/{cid}:
+    get:
+      operationId: GetChartRevision
+      description: |
+        Show the chart definition at a revision: empty when the revision holds
+        none, or when the chart is not published to the caller.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormRevisionResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/diff/{cid}:
+    get:
+      operationId: GetChartDiff
+      description: |
+        Show the change made by a revision, or the differences between cid and
+        other when set, as git prints them: empty when the chart is not published
+        to the caller.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+        - in: query
+          name: other
+          required: false
+          description: Another revision to compare cid with
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormDiffResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /charts/{chart_id}/rollback/{cid}:
+    post:
+      operationId: PostChartRollback
+      description: |
+        Restore the chart definition of a revision, recorded as a new revision
+        and logged (chart.rollback). Requires the ReportsManager privilege and responsibility for the chart.
+      parameters:
+        - in: path
+          name: chart_id
+          required: true
+          description: Chart id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}/am_i_responsible:
+    get:
+      operationId: GetMetricAmIResponsible
+      description: |
+        Tell whether the caller may change the metric, as {"data": true} or
+        {"data": false}: the Manager privilege.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: boolean
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}/publications:
+    get:
+      operationId: GetMetricPublications
+      description: |
+        List the groups the metric is published to. Requires the metric to be
+        published to the caller, unless a manager.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+        - $ref: '#/components/parameters/inQueryProps'
+        - $ref: '#/components/parameters/inQueryLimit'
+        - $ref: '#/components/parameters/inQueryOffset'
+        - $ref: '#/components/parameters/inQueryMeta'
+        - $ref: '#/components/parameters/inQueryStats'
+        - $ref: '#/components/parameters/inQueryOrderby'
+        - $ref: '#/components/parameters/inQueryGroupby'
+        - $ref: '#/components/parameters/inQueryFilter'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GroupListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}/publications/{group_id}:
+    post:
+      operationId: PostMetricPublication
+      description: |
+        Publish the metric to a group, logged (metric.publication.add). A non-manager chooses among
+        their own groups; privilege groups are refused. Requires the Manager privilege.
+        An existing link answers with an info message.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteMetricPublication
+      description: |
+        Unpublish the metric from a group, logged (metric.publication.delete). Requires the Manager privilege.
+        A missing link answers with an info message.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+        - in: path
+          name: group_id
+          required: true
+          description: Group id, or role when adding
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics_publications:
+    post:
+      operationId: PostMetricsPublications
+      description: |
+        Same as POST /metrics/{metric_id}/publications/{group_id}, the metric_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+    delete:
+      operationId: DeleteMetricsPublications
+      description: |
+        Same as DELETE /metrics/{metric_id}/publications/{group_id}, the metric_id and
+        group_id keys given in the body: one entry or a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - type: object
+                  additionalProperties: true
+                - type: array
+                  items:
+                    type: object
+                    additionalProperties: true
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}/revisions:
+    get:
+      operationId: GetMetricRevisions
+      description: |
+        List the revisions of the metric definition, from its git history, the
+        newest first, 300 at most: an empty list when the metric is not published
+        to the caller.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormRevisionListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}/revisions/{cid}:
+    get:
+      operationId: GetMetricRevision
+      description: |
+        Show the metric definition at a revision: empty when the revision holds
+        none, or when the metric is not published to the caller.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormRevisionResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}/diff/{cid}:
+    get:
+      operationId: GetMetricDiff
+      description: |
+        Show the change made by a revision, or the differences between cid and
+        other when set, as git prints them: empty when the metric is not published
+        to the caller.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+        - in: query
+          name: other
+          required: false
+          description: Another revision to compare cid with
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FormDiffResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /metrics/{metric_id}/rollback/{cid}:
+    post:
+      operationId: PostMetricRollback
+      description: |
+        Restore the metric definition of a revision, recorded as a new revision
+        and logged (metric.rollback). Requires the Manager privilege.
+      parameters:
+        - in: path
+          name: metric_id
+          required: true
+          description: Metric id, or name
+          schema:
+            type: string
+        - in: path
+          name: cid
+          required: true
+          description: Git commit id of a revision
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InfoResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/{report_id}/export:
+    get:
+      operationId: GetReportExport
+      description: |
+        Export the report with the charts and the metrics it shows, the ids replaced
+        by the names, in the format POST /reports/import reads. Requires the report
+        to be published to the caller, unless a manager.
+      parameters:
+        - in: path
+          name: report_id
+          required: true
+          description: Report id, or name
+          schema:
+            type: string
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportExport'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /reports/import:
+    post:
+      operationId: PostReportsImport
+      description: |
+        Create the metrics, the charts and the reports of an export (GET
+        /reports/{report_id}/export), each published to the primary team of the
+        caller, also made responsible for it. An object of an existing name is kept
+        and used as it is. Requires the ReportsManager privilege, and the Manager
+        privilege to create a metric. Answers what was done and what was not.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportExport'
+      tags:
+        - collector
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportImportResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
   /ai/resources:
     get:
       operationId: GetAIResources
@@ -24729,6 +27666,70 @@ components:
         report_yaml:
           type: string
 
+
+    ReportExport:
+      type: object
+      description: |
+        Reports with the charts and the metrics they show, the ids replaced by the
+        names: report_name and chart_name entries in the definitions, metric_name
+        entries in the chart definitions and the report sections.
+      properties:
+        reports:
+          type: array
+          items:
+            type: object
+            required: [report_name]
+            properties:
+              report_name:
+                type: string
+              report_definition:
+                type: object
+                additionalProperties: true
+        charts:
+          type: array
+          items:
+            type: object
+            required: [chart_name]
+            properties:
+              chart_name:
+                type: string
+              chart_definition:
+                type: object
+                additionalProperties: true
+        metrics:
+          type: array
+          items:
+            type: object
+            required: [metric_name]
+            properties:
+              metric_name:
+                type: string
+              metric_sql:
+                type: string
+              metric_col_value_index:
+                type: integer
+                nullable: true
+              metric_col_instance_index:
+                type: integer
+                nullable: true
+              metric_col_instance_label:
+                type: string
+              metric_historize:
+                type: string
+
+    ReportImportResponse:
+      type: object
+      required: [info, error]
+      properties:
+        info:
+          type: array
+          items:
+            type: string
+        error:
+          type: array
+          items:
+            type: string
+
     ReportListResponse:
       type: object
       required:
@@ -25254,6 +28255,492 @@ components:
         error:
           type: string
           description: Why the call failed before an answer, a refused address say.
+
+    NotificationChannelType:
+      type: string
+      enum:
+        - email
+        - slack
+        - mattermost
+        - teams
+        - webhook
+      x-enum-varnames:
+        - NotificationChannelEmail
+        - NotificationChannelSlack
+        - NotificationChannelMattermost
+        - NotificationChannelTeams
+        - NotificationChannelWebhook
+
+    NotificationChannel:
+      type: object
+      description: |
+        A destination of the alert notifications. email sends to the addresses;
+        slack and mattermost post to an incoming webhook; teams posts an Adaptive
+        Card to a Workflows webhook ("When a Teams webhook request is received");
+        webhook posts a JSON document (version 1), signed with the secret when
+        set: X-OC3-Signature is "sha256=" and the hex of the HMAC-SHA256 of
+        X-OC3-Timestamp, a dot and the body.
+      required:
+        - id
+        - name
+        - type
+        - description
+        - enabled
+        - addresses
+        - networks
+        - secrets
+        - updated_by
+        - created
+        - updated
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        type:
+          $ref: '#/components/schemas/NotificationChannelType'
+        description:
+          type: string
+        enabled:
+          type: boolean
+        addresses:
+          type: array
+          description: The mail addresses of an email channel.
+          items:
+            type: string
+        username:
+          type: string
+          description: The name a Slack or a Mattermost message shows, when the webhook lets the sender choose it.
+        icon_url:
+          type: string
+          description: The picture a Slack or a Mattermost message shows, when the webhook lets the sender choose it.
+        networks:
+          type: array
+          description: The private networks the webhook host may resolve to, as CIDR prefixes; the public addresses are always allowed.
+          items:
+            type: string
+        secrets:
+          type: object
+          description: Whether each secret is set; their values are never returned.
+          required:
+            - url
+            - secret
+          properties:
+            url:
+              type: boolean
+            secret:
+              type: boolean
+        updated_by:
+          type: string
+        created:
+          type: string
+        updated:
+          type: string
+
+    NotificationChannelInput:
+      type: object
+      required:
+        - name
+        - type
+      properties:
+        name:
+          type: string
+          description: 1 to 64 letters, digits, ".", "_" or "-".
+        type:
+          $ref: '#/components/schemas/NotificationChannelType'
+        description:
+          type: string
+        enabled:
+          type: boolean
+          description: true when absent.
+        addresses:
+          type: array
+          description: The mail addresses of an email channel, one at least.
+          items:
+            type: string
+        username:
+          type: string
+        icon_url:
+          type: string
+        networks:
+          type: array
+          items:
+            type: string
+        secrets:
+          type: object
+          description: |
+            url, the webhook url (https), required by the webhook types; secret,
+            the key signing the generic webhooks. A value replaces the secret set,
+            null removes it, absent keeps it.
+          properties:
+            url:
+              type: string
+              nullable: true
+            secret:
+              type: string
+              nullable: true
+
+    NotificationChannelTestResult:
+      type: object
+      required:
+        - ok
+        - duration_ms
+      properties:
+        ok:
+          type: boolean
+        duration_ms:
+          type: integer
+        error:
+          type: string
+          description: Why the channel did not accept the message.
+
+    NotificationSubscription:
+      type: object
+      required:
+        - id
+        - channel_id
+        - channel_name
+        - group_id
+        - group_role
+        - scope
+        - min_severity
+        - delay_min
+        - enabled
+        - types_include
+        - types_exclude
+        - envs
+        - periods
+        - notify_resolved
+        - updated_by
+        - created
+        - updated
+      properties:
+        id:
+          type: integer
+          format: int64
+        channel_id:
+          type: integer
+          format: int64
+        channel_name:
+          type: string
+        group_id:
+          type: integer
+          format: int64
+        group_role:
+          type: string
+        scope:
+          $ref: '#/components/schemas/NotificationSubscriptionScope'
+        min_severity:
+          type: integer
+          description: The lowest severity sent, 0 notice, 1 warning, 2 error, 3 critical, 4 alert.
+        delay_min:
+          type: integer
+          description: The age in minutes an alert reaches before it is sent.
+        enabled:
+          type: boolean
+        types_include:
+          type: array
+          description: Only the alerts of these types (dash_type); empty for all.
+          items:
+            type: string
+        types_exclude:
+          type: array
+          description: Not the alerts of these types.
+          items:
+            type: string
+        envs:
+          type: array
+          description: Only the alerts of these environments (dash_env, PRD, DEV...); empty for all.
+          items:
+            type: string
+        filterset_id:
+          type: integer
+          nullable: true
+          description: Only the alerts of the nodes and services of this filterset; a filterset selecting nothing lets no alert through.
+        periods:
+          type: object
+          description: |
+            The periods of the week the subscription sends on, by day (mon to sun):
+            always, never, or custom from begin to end, "HH:MM", local time of the
+            collector; a day left out is always. Empty for always.
+          additionalProperties:
+            $ref: '#/components/schemas/NotificationPeriod'
+        notify_resolved:
+          type: boolean
+          description: Announce the alerts sent once they are gone from the dashboard.
+        updated_by:
+          type: string
+        created:
+          type: string
+        updated:
+          type: string
+
+    NotificationSubscriptionScope:
+      type: string
+      description: responsible, the alerts of the apps the group is responsible for; all, every alert.
+      enum:
+        - responsible
+        - all
+      x-enum-varnames:
+        - NotificationScopeResponsible
+        - NotificationScopeAll
+
+    NotificationSubscriptionInput:
+      type: object
+      required:
+        - channel_id
+        - group_id
+      properties:
+        channel_id:
+          type: integer
+          format: int64
+        group_id:
+          type: integer
+          format: int64
+        scope:
+          $ref: '#/components/schemas/NotificationSubscriptionScope'
+        min_severity:
+          type: integer
+          description: 0 to 4, 1 (warning) when absent.
+        delay_min:
+          type: integer
+          description: 0 to 1440, 0 when absent.
+        enabled:
+          type: boolean
+          description: true when absent.
+        types_include:
+          type: array
+          description: Only the alerts of these types (dash_type); empty for all.
+          items:
+            type: string
+        types_exclude:
+          type: array
+          description: Not the alerts of these types.
+          items:
+            type: string
+        envs:
+          type: array
+          description: Only the alerts of these environments (dash_env, PRD, DEV...); empty for all.
+          items:
+            type: string
+        filterset_id:
+          type: integer
+          nullable: true
+          description: Only the alerts of the nodes and services of this filterset; a filterset selecting nothing lets no alert through.
+        periods:
+          type: object
+          description: |
+            The periods of the week the subscription sends on, by day (mon to sun):
+            always, never, or custom from begin to end, "HH:MM", local time of the
+            collector; a day left out is always. Empty for always.
+          additionalProperties:
+            $ref: '#/components/schemas/NotificationPeriod'
+        notify_resolved:
+          type: boolean
+          description: Announce the alerts sent once they are gone from the dashboard.
+
+    NotificationPeriod:
+      type: object
+      required:
+        - period
+      properties:
+        period:
+          type: string
+          enum:
+            - always
+            - never
+            - custom
+          x-enum-varnames:
+            - NotificationPeriodAlways
+            - NotificationPeriodNever
+            - NotificationPeriodCustom
+        begin:
+          type: string
+          description: HH:MM, for custom.
+        end:
+          type: string
+          description: HH:MM, for custom; before begin, the period spans midnight.
+
+    NotificationDeliveryRow:
+      type: object
+      description: |
+        A notification of an alert to a recipient. Every property is optional: the
+        props query parameter selects which the server returns.
+      properties:
+        id:
+          type: integer
+        alert_id:
+          type: integer
+        recipient:
+          type: string
+          description: subscription:<id>, or email:user:<id>.
+        recipient_kind:
+          type: string
+          description: subscription, or user (the personal mails).
+        recipient_label:
+          type: string
+          description: The channel and the group of the subscription, or the mail address of the user.
+        channel_name:
+          type: string
+        group_role:
+          type: string
+        state:
+          type: string
+          description: pending, sent or failed.
+        attempts:
+          type: integer
+        last_error:
+          type: string
+        next_try:
+          type: string
+          nullable: true
+          description: When a failed delivery is tried again.
+        alert_severity:
+          type: integer
+          nullable: true
+        alert_type:
+          type: string
+        alert_object:
+          type: string
+        alert_message:
+          type: string
+        alert_present:
+          type: boolean
+          description: Whether the alert is still in the dashboard.
+        created:
+          type: string
+        updated:
+          type: string
+
+    NotificationDeliveryListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/NotificationDeliveryRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    UserNotificationLevel:
+      type: string
+      enum:
+        - debug
+        - info
+        - warning
+        - error
+        - critical
+      x-enum-varnames:
+        - UserNotificationLevelDebug
+        - UserNotificationLevelInfo
+        - UserNotificationLevelWarning
+        - UserNotificationLevelError
+        - UserNotificationLevelCritical
+
+    UserNotifications:
+      type: object
+      required:
+        - email
+        - email_notifications
+        - email_log_level
+        - email_notifications_delay
+        - periods
+        - mail_enabled
+      properties:
+        email:
+          type: string
+          description: The address the alerts are mailed to.
+        email_notifications:
+          type: boolean
+        email_log_level:
+          $ref: '#/components/schemas/UserNotificationLevel'
+        email_notifications_delay:
+          type: integer
+          description: Minutes an alert waits before it is mailed.
+        periods:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/NotificationPeriod'
+        mail_enabled:
+          type: boolean
+          description: Whether the collector sends the notifications by mail (notifications.enable and an SMTP server).
+
+    UserNotificationsInput:
+      type: object
+      required:
+        - email_notifications
+        - email_log_level
+        - email_notifications_delay
+      properties:
+        email_notifications:
+          type: boolean
+        email_log_level:
+          $ref: '#/components/schemas/UserNotificationLevel'
+        email_notifications_delay:
+          type: integer
+          description: 0 to 1440.
+        periods:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/NotificationPeriod'
+
+    SafeSecret:
+      type: object
+      required:
+        - kind
+        - id
+        - name
+        - key_id
+        - key_active
+        - key_known
+        - updated
+      properties:
+        kind:
+          type: string
+          enum:
+            - form_connector
+            - notification_channel
+          x-enum-varnames:
+            - SafeSecretFormConnector
+            - SafeSecretNotificationChannel
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        key_id:
+          type: string
+          description: The master key the secrets are wrapped with.
+        key_active:
+          type: boolean
+          description: Whether it is the active key; else oc3 safe rewrap wraps them with it.
+        key_known:
+          type: boolean
+          description: Whether the server has the key; the secrets do not open without it.
+        updated:
+          type: string
+
+    SafeSecretsResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SafeSecret'
+        active_key_id:
+          type: string
+          description: The active master key, absent without safe.keys_file.
 
     FormCandidatesInput:
       type: object
@@ -27209,6 +30696,73 @@ components:
         array_updated:
           type: string
 
+
+    ArrayProxyRow:
+      type: object
+      description: |
+        A node inventorying a storage array. Every property is optional: the
+        props query parameter selects them; the columns of the node read as
+        nodes.<column>.
+      properties:
+        id:
+          type: integer
+        array_id:
+          type: string
+        node_id:
+          type: string
+      additionalProperties: true
+
+    ArrayProxyListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ArrayProxyRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
+    ArrayTargetRow:
+      type: object
+      description: |
+        A target port of a storage array. Every property is optional: the props
+        query parameter selects them.
+      properties:
+        id:
+          type: integer
+        array_id:
+          type: string
+        array_tgtid:
+          type: string
+        updated:
+          type: string
+
+    ArrayTargetListResponse:
+      type: object
+      required:
+        - data
+      properties:
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/ArrayTargetRow'
+            - type: object
+              additionalProperties:
+                type: object
+                additionalProperties:
+                  type: integer
+        meta:
+          $ref: '#/components/schemas/ListMeta'
+
     ArrayListResponse:
       type: object
       required:
@@ -27873,7 +31427,8 @@ components:
         an instance, applies to instances only. pace says how many targets run at
         a time: all, one (one after the other) or batch (batch_size at a time).
         timeout, in seconds, fails a target whose action has not finished by
-        then; 0 means no limit.
+        then; 0 means no limit. failure_threshold lets the run go on past
+        failed targets: without it, the first target failing fails the step.
       required: [name, action, kind, targets, pace]
       properties:
         name:
@@ -27895,6 +31450,25 @@ components:
         timeout:
           type: integer
           minimum: 0
+        failure_threshold:
+          $ref: '#/components/schemas/OrchestrationFailureThreshold'
+
+    OrchestrationFailureThreshold:
+      type: object
+      description: |
+        The failed targets (failed, refused, timed out or cancelled) a step goes
+        on with: it succeeds, the run going on with the next step, while they
+        are fewer than value, a number of targets (unit count) or a percentage
+        of the targets of the step (unit percent, 1 to 100). The step fails, its
+        waiting targets not run, as soon as they reach it.
+      required: [value, unit]
+      properties:
+        value:
+          type: integer
+          minimum: 1
+        unit:
+          type: string
+          enum: [count, percent]
 
     OrchestrationInput:
       type: object
@@ -28314,6 +31888,20 @@ components:
       description: The object of the node, as namespace/kind/name. Default the node.
       schema:
         type: string
+    inPathNotificationChannelId:
+      in: path
+      name: channel_id
+      required: true
+      schema:
+        type: integer
+        format: int64
+    inPathNotificationSubscriptionId:
+      in: path
+      name: subscription_id
+      required: true
+      schema:
+        type: integer
+        format: int64
     inPathOrchestrationId:
       in: path
       name: orchestration_id

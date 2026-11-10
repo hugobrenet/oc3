@@ -217,3 +217,40 @@ func TestSecretRoundTripAndBinding(t *testing.T) {
 		t.Errorf("no keyring: %v, want ErrNoKey", err)
 	}
 }
+
+func TestRewrapSecret(t *testing.T) {
+	key := func(b byte) string {
+		k := make([]byte, KeySize)
+		for i := range k {
+			k[i] = b
+		}
+		return base64.StdEncoding.EncodeToString(k)
+	}
+	old, err := ParseKeyring([]byte("keys:\n  - id: a\n    key: " + key(1) + "\n    active: true\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	sealed, err := SealSecret(old, "notification-channel:3", []byte(`{"url":"https://x"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	ring, err := ParseKeyring([]byte("keys:\n  - id: a\n    key: " + key(1) + "\n  - id: b\n    key: " + key(2) + "\n    active: true\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := RewrapSecret(ring, "notification-channel:4", sealed.KeyID, sealed.WrappedKey); err == nil {
+		t.Error("rewrapped under another label")
+	}
+	keyID, wrapped, err := RewrapSecret(ring, "notification-channel:3", sealed.KeyID, sealed.WrappedKey)
+	if err != nil || keyID != "b" {
+		t.Fatalf("rewrap: %s %v", keyID, err)
+	}
+	only, err := ParseKeyring([]byte("keys:\n  - id: b\n    key: " + key(2) + "\n    active: true\n"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	plain, err := OpenSecret(only, "notification-channel:3", sealed.Content, keyID, wrapped)
+	if err != nil || string(plain) != `{"url":"https://x"}` {
+		t.Fatalf("open after rewrap: %q %v", plain, err)
+	}
+}

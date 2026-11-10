@@ -38,6 +38,16 @@ type (
 // collector filters them by application (q_filter(app_field=...)). dgID, when
 // not zero, keeps those of one disk group.
 func (oDb *DB) GetQuotas(ctx context.Context, p ListParams, dgID int64) ([]map[string]any, error) {
+	return oDb.getQuotas(ctx, p, dgID, 0)
+}
+
+// GetQuota returns one quota of a disk group, as GetQuotas lists them: empty
+// when the caller may not see it.
+func (oDb *DB) GetQuota(ctx context.Context, p ListParams, dgID, quotaID int64) ([]map[string]any, error) {
+	return oDb.getQuotas(ctx, p, dgID, quotaID)
+}
+
+func (oDb *DB) getQuotas(ctx context.Context, p ListParams, dgID, quotaID int64) ([]map[string]any, error) {
 	if len(p.SelectExprs) == 0 {
 		return nil, fmt.Errorf("getQuotas: no select expressions")
 	}
@@ -46,6 +56,10 @@ func (oDb *DB) GetQuotas(ctx context.Context, p ListParams, dgID int64) ([]map[s
 	if dgID != 0 {
 		query += " AND dg_id = ?"
 		args = append(args, dgID)
+	}
+	if quotaID != 0 {
+		query += " AND id = ?"
+		args = append(args, quotaID)
 	}
 	if !p.IsManager && !p.HasGroup("StorageManager") {
 		groups := cleanGroups(p.Groups)

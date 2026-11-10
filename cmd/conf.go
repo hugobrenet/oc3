@@ -72,6 +72,12 @@ func setDefaultServerConfig() {
 	// One git repository per form, holding its yaml history, as the historical
 	// collector keeps them under private/forms.
 	viper.SetDefault(s+".directories.forms", "/oc3/uploads/forms")
+	// One git repository per report, chart and metric, holding the history of
+	// its definition, as the historical collector keeps them under
+	// private/reports, private/charts and private/metrics.
+	viper.SetDefault(s+".directories.reports", "/oc3/uploads/reports")
+	viper.SetDefault(s+".directories.charts", "/oc3/uploads/charts")
+	viper.SetDefault(s+".directories.metrics", "/oc3/uploads/metrics")
 	// One git repository per node, committed by the scheduler from the reports of
 	// the agents.
 	viper.SetDefault(s+".directories.sysreport", "/oc3/uploads/sysreport")

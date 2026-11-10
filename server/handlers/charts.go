@@ -108,6 +108,8 @@ func (a *Api) PostCharts(c echo.Context) error {
 		}
 	}
 
+	a.reportCommit(ctx, c, log, reportKindChart, id, definition)
+
 	userEmail, _ := c.Get(XUserEmail).(string)
 	if logErr := odb.Log(ctx, cdb.LogEntry{
 		Action: "chart.add",

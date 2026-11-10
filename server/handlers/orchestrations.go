@@ -92,6 +92,20 @@ func validateOrchestrationStep(steps []server.OrchestrationStep, i int, step ser
 	if step.Timeout != nil && *step.Timeout < 0 {
 		return errors.New("timeout must be 0 or more")
 	}
+	if th := step.FailureThreshold; th != nil {
+		switch th.Unit {
+		case server.Count:
+			if th.Value < 1 {
+				return errors.New("failure_threshold must be 1 or more")
+			}
+		case server.Percent:
+			if th.Value < 1 || th.Value > 100 {
+				return errors.New("failure_threshold must be a percentage from 1 to 100")
+			}
+		default:
+			return fmt.Errorf("unknown failure_threshold unit %q", th.Unit)
+		}
+	}
 	switch step.Targets.Mode {
 	case server.Pick:
 		if step.Targets.Ids == nil || len(*step.Targets.Ids) == 0 {

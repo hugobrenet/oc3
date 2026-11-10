@@ -13,6 +13,7 @@ var validMenuEntries = map[string]struct{}{
 	"orch-workflows":               {},
 	"orch-runs":                    {},
 	"view-clusters":                {},
+	"view-arrays":                  {},
 	"adm-groups":                   {},
 	"adm-claim-mappings":           {},
 	"adm-field-constraints":        {},

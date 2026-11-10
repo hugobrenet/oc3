@@ -150,7 +150,7 @@ func (st *clusterState) instanceData(si, ni int) map[string]any {
 	return map[string]any{
 		"config": map[string]any{
 			"csum": csum(s.path, len(s.resources)), "priority": 50, "scope": st.nodeNames(),
-			"updated_at": ts(st.startedAt), "app": "default", "monitor_action": []string{"none"},
+			"updated_at": ts(st.startedAt), "app": s.app, "monitor_action": []string{"none"},
 			"orchestrate": "ha", "placement_policy": "nodes order", "resources": cfgRes,
 			"schedules": []any{
 				map[string]any{"action": "status", "schedule": "@10m", "key": "status_schedule"},
@@ -200,7 +200,7 @@ func (st *clusterState) resinfoBody(si, ni int) map[string]any {
 func (st *clusterState) objectConfigBody(si int) map[string]any {
 	s := st.c.services[si]
 	var b strings.Builder
-	fmt.Fprintf(&b, "[DEFAULT]\nnodes = %s\ntopology = %s\norchestrate = ha\n\n", strings.Join(st.nodeNames(), " "), s.topology)
+	fmt.Fprintf(&b, "[DEFAULT]\nnodes = %s\ntopology = %s\norchestrate = ha\napp = %s\n\n", strings.Join(st.nodeNames(), " "), s.topology, s.app)
 	for _, r := range s.resources {
 		fmt.Fprintf(&b, "[%s]\ntype = %s\n", r.rid, r.kind)
 		for k, v := range r.info {
@@ -209,7 +209,7 @@ func (st *clusterState) objectConfigBody(si int) map[string]any {
 		b.WriteString("\n")
 	}
 	return map[string]any{
-		"path": s.path, "app": "default", "comment": "", "drp_node": "", "env": "",
+		"path": s.path, "app": s.app, "comment": "", "drp_node": "", "env": "",
 		"flex_max": 0, "flex_min": 0, "flex_target": 0, "monitored_resource_count": 0,
 		"orchestrate": "ha", "scope": st.nodeNames(), "topology": s.topology,
 		"raw_config": base64.StdEncoding.EncodeToString([]byte(b.String())),
@@ -314,6 +314,7 @@ func nodeAssetBody(spec fleetSpec, n *node) map[string]any {
 		uids = append(uids, map[string]any{"uid": i, "username": fmt.Sprintf("usr%d", i)})
 	}
 	mac := fmt.Sprintf("52:54:00:%02x:%02x:%02x", r.IntN(256), r.IntN(256), r.IntN(256))
+	hba, targets := nodeHBAs(spec, n)
 	ip := fmt.Sprintf("10.%d.%d.%d", 10+n.cluster.idx/250%200, n.cluster.idx%250, n.idx+10)
 	return map[string]any{
 		"properties": map[string]any{
@@ -336,8 +337,8 @@ func nodeAssetBody(spec fleetSpec, n *node) map[string]any {
 		"hardware": hw,
 		"gids":     gids,
 		"uids":     uids,
-		"hba":      []any{},
-		"targets":  []any{},
+		"hba":      hba,
+		"targets":  targets,
 		"lan": map[string]any{
 			mac: []any{map[string]any{"addr": ip, "flag_deprecated": false, "intf": "eth0", "mask": "24", "type": "ipv4"}},
 		},
@@ -375,17 +376,110 @@ func nodeChecksBody(spec fleetSpec, n *node, now time.Time) map[string]any {
 	return map[string]any{"data": data}
 }
 
+// serviceDiskSerial is the serial of the disk of a service: 24 hex digits.
+func serviceDiskSerial(spec fleetSpec, s *service) string {
+	return fmt.Sprintf("%024x", spec.newRand("disk", s.path).Uint64())
+}
+
+// serviceDiskSize is the size of the disk of a service, in MB.
+func serviceDiskSize(spec fleetSpec, s *service) int {
+	if spec.Arrays == 0 {
+		return 10240
+	}
+	return 10240 * (1 + spec.newRand("disksize", s.path).IntN(20))
+}
+
 func nodeDisksBody(spec fleetSpec, n *node) map[string]any {
 	var data []any
 	for _, s := range n.cluster.services {
-		data = append(data, map[string]any{
-			"dg": "vg_" + s.name, "id": fmt.Sprintf("36001405%024x", spec.newRand("disk", s.path).Uint64()),
-			"model": "SimDisk", "object_path": s.path, "region": "0", "size": 10240, "used": 10240, "vendor": "SIMSTOR ",
-		})
+		serial := serviceDiskSerial(spec, s)
+		size := serviceDiskSize(spec, s)
+		d := map[string]any{
+			"dg": "vg_" + s.name, "id": "36001405" + serial,
+			"model": "SimDisk", "object_path": s.path, "region": "0", "size": size, "used": size, "vendor": "SIMSTOR ",
+		}
+		if spec.Arrays > 0 {
+			// A volume of a pure array, as the agent reports it.
+			d["id"], d["model"], d["vendor"] = "624a9370"+serial, "FlashArray", "PURE    "
+		}
+		data = append(data, d)
 	}
 	data = append(data, map[string]any{
 		"dg": "rootvg", "id": fmt.Sprintf("36001405%024x", spec.newRand("disk", n.name).Uint64()),
 		"model": "SimDisk", "object_path": "", "region": "0", "size": 51200, "used": 51200, "vendor": "SIMSTOR ",
 	})
 	return map[string]any{"data": data}
+}
+
+// arrayName is the name of the ai-th array of the fleet.
+func arrayName(spec fleetSpec, ai int) string {
+	return fmt.Sprintf("%s-fa%02d", spec.Prefix, ai+1)
+}
+
+// arrayBody is the report of the ai-th pure array, as "om node push arrays"
+// sends it: the array, its fc ports, and the volumes of the services of the
+// clusters it serves (cluster ci on array ci%arrays).
+func arrayBody(spec fleetSpec, f *fleet, ai int) map[string]any {
+	name := arrayName(spec, ai)
+	r := spec.newRand("array", name)
+	var ports []any
+	for i, wwn := range arrayPortWWNs(spec, ai) {
+		ports = append(ports, map[string]any{"name": fmt.Sprintf("CT%d.FC%d", i/4, i%4), "wwn": strings.ToUpper(wwn[0:2] + ":" + wwn[2:4] + ":" + wwn[4:6] + ":" + wwn[6:8] + ":" + wwn[8:10] + ":" + wwn[10:12] + ":" + wwn[12:14] + ":" + wwn[14:16])})
+	}
+	volumes := []any{}
+	for _, c := range f.clusters {
+		if c.idx%spec.Arrays != ai {
+			continue
+		}
+		for _, s := range c.services {
+			size := int64(serviceDiskSize(spec, s)) * 1024 * 1024
+			volumes = append(volumes, map[string]any{
+				"id":          spec.uuid("volume", s.path),
+				"name":        "vg_" + s.name,
+				"serial":      strings.ToUpper(serviceDiskSerial(spec, s)),
+				"provisioned": size,
+				"space":       map[string]any{"total_physical": size * int64(20+r.IntN(60)) / 100},
+				"subtype":     "regular",
+			})
+		}
+	}
+	return map[string]any{
+		"name": name,
+		"type": "pure",
+		"data": map[string]any{
+			"arrays":  []any{map[string]any{"name": name, "version": "6.5.3", "os": "Purity//FA"}},
+			"volumes": volumes,
+			"ports":   ports,
+		},
+	}
+}
+
+// arrayPortWWNs are the wwn of the 8 fc ports of the ai-th array, 16 hex
+// digits: ports 0-3 on controller 0, 4-7 on controller 1, the even ports on
+// fabric A and the odd ones on fabric B.
+func arrayPortWWNs(spec fleetSpec, ai int) []string {
+	r := spec.newRand("arrayports", arrayName(spec, ai))
+	l := make([]string, 8)
+	for i := range l {
+		l[i] = fmt.Sprintf("524a9370%08x", r.Uint32())
+	}
+	return l
+}
+
+// nodeHBAs are the fc host bus adapters of a node of a fleet with arrays, one
+// a fabric, and the target ports each sees: the ports of the array of its
+// cluster on its fabric.
+func nodeHBAs(spec fleetSpec, n *node) (hba, targets []any) {
+	hba, targets = []any{}, []any{}
+	if spec.Arrays == 0 {
+		return
+	}
+	ports := arrayPortWWNs(spec, n.cluster.idx%spec.Arrays)
+	for fabric, id := range nodeHBAIDs(spec, n) {
+		hba = append(hba, map[string]any{"hba_id": id, "hba_type": "fc", "host": fmt.Sprintf("host%d", fabric+1)})
+		for i := fabric; i < len(ports); i += 2 {
+			targets = append(targets, map[string]any{"hba_id": id, "tgt_id": ports[i]})
+		}
+	}
+	return
 }

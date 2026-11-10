@@ -156,6 +156,12 @@ func (a *Api) PostMetrics(c echo.Context) error {
 		}
 	}
 
+	sqlText := ""
+	if fields.SQL != nil {
+		sqlText = *fields.SQL
+	}
+	a.reportCommit(ctx, c, log, reportKindMetric, id, sqlText)
+
 	if logErr := odb.Log(ctx, cdb.LogEntry{
 		Action: "metric.add",
 		User:   userEmail,
@@ -217,6 +223,9 @@ func (a *Api) PostMetric(c echo.Context, metricId string) error {
 		if err := odb.UpdateMetric(ctx, id, fields); err != nil {
 			log.Error("cannot update metric", "metric_id", id, logkey.Error, err)
 			return JSONProblemf(c, http.StatusInternalServerError, "cannot update metric")
+		}
+		if fields.SQL != nil && *fields.SQL != row.SQL {
+			a.reportCommit(ctx, c, log, reportKindMetric, id, *fields.SQL)
 		}
 		userEmail, _ := c.Get(XUserEmail).(string)
 		if logErr := odb.Log(ctx, cdb.LogEntry{
