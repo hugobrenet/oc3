@@ -1810,12 +1810,12 @@ var propsMapping = map[string]propMapping{
 	},
 	"log_event": {
 		Available: []string{
-			"id", "log_action", "log_user", "log_impersonator", "log_fmt", "log_dict", "log_date",
-			"svc_id", "node_id", "log_level", "log_entry_id",
+			"id", "log_action", "log_user", "log_impersonator", "log_origin", "log_request_id",
+			"log_fmt", "log_dict", "log_date", "svc_id", "node_id", "log_level", "log_entry_id",
 			"log_gtalk_sent", "log_email_sent",
 		},
 		Default: []string{
-			"id", "log_action", "log_user", "log_impersonator", "log_fmt", "log_date",
+			"id", "log_action", "log_user", "log_impersonator", "log_origin", "log_fmt", "log_date",
 			"svc_id", "node_id", "log_level",
 		},
 		Props: map[string]propDef{
@@ -1825,6 +1825,11 @@ var propsMapping = map[string]propMapping{
 			// The user who really signed in when log_user was impersonated; empty
 			// otherwise.
 			"log_impersonator": colStr(schema.LogLogImpersonator),
+			// The client the request came through, as it declared it: assistant
+			// or mcp; empty for the web interface, the API and the collector.
+			"log_origin": colStr(schema.LogLogOrigin),
+			// The X-Request-ID that client gave, on its audit lines too.
+			"log_request_id": colStr(schema.LogLogRequestID),
 			// Filtered on the format and its values together: the message shown is
 			// the format filled with the values, and a node or tag name typed in the
 			// filter is among the values.

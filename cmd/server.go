@@ -105,15 +105,17 @@ func (t *server) docMiddleware() echo.MiddlewareFunc {
 }
 
 // authMiddleware authenticates the request, then lets a member of the
-// Manager make it as another user.
+// Manager make it as another user, and marks the request with the client it
+// declares coming through, for the audit.
 func (t *server) authMiddleware(publicPath, publicPrefix []string) echo.MiddlewareFunc {
 	authenticate := t.authenticateMiddleware(publicPath, publicPrefix)
 	// Right after authentication: a request riding on the session cookie must come
 	// from the SPA before anything acts on it, impersonation included.
 	csrf := handlers.CSRFMiddleware(t.oidc)
 	impersonate := handlers.ImpersonateMiddleware(t.db)
+	origin := handlers.OriginMiddleware()
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return authenticate(csrf(impersonate(next)))
+		return authenticate(csrf(impersonate(origin(next))))
 	}
 }
 

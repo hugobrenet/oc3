@@ -4790,6 +4790,16 @@ type LogRow struct {
 	// (impersonation); empty otherwise.
 	LogImpersonator *string `json:"log_impersonator,omitempty"`
 	LogLevel        *string `json:"log_level,omitempty"`
+
+	// LogOrigin The client the request came through, as it declared it with the
+	// X-OpenSVC-Origin header: assistant for the AI assistant, through
+	// the MCP of the collector and its agent, mcp for another client of
+	// that MCP; empty for the web interface, the API and the collector.
+	LogOrigin *string `json:"log_origin,omitempty"`
+
+	// LogRequestId The X-Request-ID of the request, given with log_origin: the agent
+	// and the MCP write it on their audit lines.
+	LogRequestId    *string `json:"log_request_id,omitempty"`
 	LogUser         *string `json:"log_user,omitempty"`
 	NodeId          *string `json:"node_id,omitempty"`
 	NodesNodename   *string `json:"nodes.nodename,omitempty"`

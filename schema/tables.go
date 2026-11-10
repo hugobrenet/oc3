@@ -1007,6 +1007,8 @@ var (
 	LogLogAction       = &Col{T: TLog, Name: "log_action", Nullable: false}
 	LogLogUser         = &Col{T: TLog, Name: "log_user", Nullable: false}
 	LogLogImpersonator = &Col{T: TLog, Name: "log_impersonator", Nullable: true}
+	LogLogOrigin       = &Col{T: TLog, Name: "log_origin", Nullable: true}
+	LogLogRequestID    = &Col{T: TLog, Name: "log_request_id", Nullable: true}
 	LogLogFmt          = &Col{T: TLog, Name: "log_fmt", Nullable: true}
 	LogLogDict         = &Col{T: TLog, Name: "log_dict", Nullable: true}
 	LogLogDate         = &Col{T: TLog, Name: "log_date", Nullable: false}
@@ -2526,6 +2528,8 @@ var AllCols = []*Col{
 	LogLogAction,
 	LogLogUser,
 	LogLogImpersonator,
+	LogLogOrigin,
+	LogLogRequestID,
 	LogLogFmt,
 	LogLogDict,
 	LogLogDate,
