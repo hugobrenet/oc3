@@ -1,6 +1,7 @@
 package serverhandlers
 
 import (
+	"database/sql"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -47,5 +48,46 @@ func TestOriginMiddleware(t *testing.T) {
 				t.Errorf("origin %+v, want %+v", got, c.want)
 			}
 		})
+	}
+}
+
+// TestOriginIsLogged writes a resource through OriginMiddleware, on a
+// MariaDB: the audit entry of the write names the origin and the request ID
+// the request declared, and an entry of a request declaring none, neither.
+func TestOriginIsLogged(t *testing.T) {
+	a, pool := aiTestAPI(t)
+	write := func(name string, header map[string]string) {
+		t.Helper()
+		body := `{"name":"` + name + `","description":"A resource.","backends":["oc3"],"body":"# Text\n"}`
+		c, rec := aiContext(http.MethodPost, "/ai/resources", body, "AIManager")
+		for k, v := range header {
+			c.Request().Header.Set(k, v)
+		}
+		if err := OriginMiddleware()(a.PostAIResources)(c); err != nil || rec.Code != http.StatusCreated {
+			t.Fatalf("create %s: %v %d %s", name, err, rec.Code, rec.Body.String())
+		}
+	}
+	const id = "0123456789abcdef0123456789abcdef"
+	write("through-assistant", map[string]string{OriginHeader: "assistant", RequestIDHeader: id})
+	write("by-hand", nil)
+	rows, err := pool.Query("SELECT log_origin, log_request_id FROM log ORDER BY id")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = rows.Close() }()
+	var got [][2]sql.NullString
+	for rows.Next() {
+		var origin, requestID sql.NullString
+		if err := rows.Scan(&origin, &requestID); err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, [2]sql.NullString{origin, requestID})
+	}
+	want := [][2]sql.NullString{
+		{{String: "assistant", Valid: true}, {String: id, Valid: true}},
+		{{}, {}},
+	}
+	if len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
+		t.Fatalf("log entries %+v, want %+v", got, want)
 	}
 }
