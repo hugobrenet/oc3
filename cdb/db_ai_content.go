@@ -27,13 +27,24 @@ type (
 		Digest       string
 		Updated      time.Time
 		UpdatedBy    string
+		// Reads are the reads of the assistants, by backend; read with
+		// AIContentFilter.WithReads only.
+		Reads []AIRead
+	}
+
+	// AIRead counts the reads of an object by the assistants of a backend:
+	// the reads of its text with that backend, the last at Last.
+	AIRead struct {
+		Backend string
+		Count   int
+		Last    time.Time
 	}
 
 	// AIContentKind is one of the two collections, a table and the table of
 	// the groups each object is published to.
 	AIContentKind struct {
-		table, publications, idColumn string
-		skill                         bool
+		table, publications, reads, idColumn string
+		skill                                bool
 	}
 
 	// AIContentFilter selects the objects a read gives: of a backend when
@@ -45,12 +56,14 @@ type (
 		Groups   []string
 		All      bool
 		WithBody bool
+		// WithReads reads the reads of each object too, for an AIManager.
+		WithReads bool
 	}
 )
 
 var (
-	AIResources = AIContentKind{table: "ai_resources", publications: "ai_resources_publications", idColumn: "resource_id"}
-	AISkills    = AIContentKind{table: "ai_skills", publications: "ai_skills_publications", idColumn: "skill_id", skill: true}
+	AIResources = AIContentKind{table: "ai_resources", publications: "ai_resources_publications", reads: "ai_resources_reads", idColumn: "resource_id"}
+	AISkills    = AIContentKind{table: "ai_skills", publications: "ai_skills_publications", reads: "ai_skills_reads", idColumn: "skill_id", skill: true}
 )
 
 // aiVisibility restricts the objects of kind to those published to none of
@@ -156,7 +169,42 @@ func (oDb *DB) AIContents(ctx context.Context, kind AIContentKind, f AIContentFi
 			items[i].Publications = append(items[i].Publications, group)
 		}
 	}
-	return items, pubs.Err()
+	if err := pubs.Err(); err != nil {
+		return nil, fmt.Errorf("aiContents %s publications: %w", kind.table, err)
+	}
+	if !f.WithReads {
+		return items, nil
+	}
+	reads, err := oDb.DB.QueryContext(ctx, "SELECT "+kind.idColumn+", backend, read_count, last_read FROM "+kind.reads+
+		" WHERE "+kind.idColumn+" IN ("+Placeholders(len(ids))+") ORDER BY backend", ids...)
+	if err != nil {
+		return nil, fmt.Errorf("aiContents %s reads: %w", kind.table, err)
+	}
+	defer func() { _ = reads.Close() }()
+	for reads.Next() {
+		var id int64
+		var r AIRead
+		if err := reads.Scan(&id, &r.Backend, &r.Count, &r.Last); err != nil {
+			return nil, fmt.Errorf("aiContents %s reads: %w", kind.table, err)
+		}
+		if i, ok := index[id]; ok {
+			items[i].Reads = append(items[i].Reads, r)
+		}
+	}
+	return items, reads.Err()
+}
+
+// CountAIRead counts a read of the object of kind named name by the
+// assistants of backend. An object deleted meanwhile counts nothing. It does
+// not mark the table changed: a read changes nothing the views follow.
+func (oDb *DB) CountAIRead(ctx context.Context, kind AIContentKind, name, backend string) error {
+	_, err := oDb.DB.ExecContext(ctx, "INSERT INTO "+kind.reads+" ("+kind.idColumn+", backend, read_count, last_read)"+
+		" SELECT id, ?, 1, NOW() FROM "+kind.table+" WHERE name = ?"+
+		" ON DUPLICATE KEY UPDATE read_count = read_count + 1, last_read = NOW()", backend, name)
+	if err != nil {
+		return fmt.Errorf("countAIRead %s: %w", kind.table, err)
+	}
+	return nil
 }
 
 // AIContentCount counts the objects of kind for backend, but the one named
@@ -275,7 +323,7 @@ func (oDb *DB) UpdateAIContent(ctx context.Context, kind AIContentKind, name str
 }
 
 // DeleteAIContent deletes the object of kind named name, with its
-// publications; found false when there is none. Call it on a transaction: the
+// publications and its reads; found false when there is none. Call it on a transaction: the
 // object goes before its publications, so that it is never published to
 // everybody.
 func (oDb *DB) DeleteAIContent(ctx context.Context, kind AIContentKind, name string) (bool, error) {
@@ -287,6 +335,9 @@ func (oDb *DB) DeleteAIContent(ctx context.Context, kind AIContentKind, name str
 		return true, fmt.Errorf("deleteAIContent %s: %w", kind.table, err)
 	}
 	oDb.SetChange(kind.table)
+	if _, err := oDb.DB.ExecContext(ctx, "DELETE FROM "+kind.reads+" WHERE "+kind.idColumn+" = ?", id); err != nil {
+		return true, fmt.Errorf("deleteAIContent %s reads: %w", kind.table, err)
+	}
 	return true, oDb.deleteAIPublications(ctx, kind, id)
 }
 

@@ -1847,6 +1847,14 @@ func (e GetWorkflowsParamsAssigned) Valid() bool {
 // AIBackend an AI backend of the agent, om3 for a cluster, oc3 for the collector
 type AIBackend string
 
+// AIRead the reads of an object by the assistants of a backend, through a GET of its text with that backend
+type AIRead struct {
+	// Backend an AI backend of the agent, om3 for a cluster, oc3 for the collector
+	Backend  AIBackend `json:"backend"`
+	Count    int       `json:"count"`
+	LastRead time.Time `json:"last_read"`
+}
+
 // AIResource defines model for AIResource.
 type AIResource struct {
 	Backends    []AIBackend `json:"backends"`
@@ -1860,6 +1868,9 @@ type AIResource struct {
 
 	// Publications the ids of the groups that may read it, empty for everybody; given to an AIManager only
 	Publications *[]int `json:"publications,omitempty"`
+
+	// Reads the reads of the assistants, by backend, none for a backend that never read it; given to an AIManager only
+	Reads *[]AIRead `json:"reads,omitempty"`
 
 	// Size the bytes of the body
 	Size    int       `json:"size"`
@@ -1911,6 +1922,9 @@ type AIResourceMeta struct {
 	// Publications the ids of the groups that may read it, empty for everybody; given to an AIManager only
 	Publications *[]int `json:"publications,omitempty"`
 
+	// Reads the reads of the assistants, by backend, none for a backend that never read it; given to an AIManager only
+	Reads *[]AIRead `json:"reads,omitempty"`
+
 	// Size the bytes of the body
 	Size    int       `json:"size"`
 	Title   string    `json:"title"`
@@ -1928,9 +1942,12 @@ type AISkill struct {
 	Name        string                 `json:"name"`
 
 	// Publications the ids of the groups that may read it, empty for everybody; given to an AIManager only
-	Publications *[]int    `json:"publications,omitempty"`
-	Size         int       `json:"size"`
-	Updated      time.Time `json:"updated"`
+	Publications *[]int `json:"publications,omitempty"`
+
+	// Reads the reads of the assistants, by backend, none for a backend that never read it; given to an AIManager only
+	Reads   *[]AIRead `json:"reads,omitempty"`
+	Size    int       `json:"size"`
+	Updated time.Time `json:"updated"`
 }
 
 // AISkillInput defines model for AISkillInput.
@@ -1965,9 +1982,12 @@ type AISkillMeta struct {
 	Name        string                 `json:"name"`
 
 	// Publications the ids of the groups that may read it, empty for everybody; given to an AIManager only
-	Publications *[]int    `json:"publications,omitempty"`
-	Size         int       `json:"size"`
-	Updated      time.Time `json:"updated"`
+	Publications *[]int `json:"publications,omitempty"`
+
+	// Reads the reads of the assistants, by backend, none for a backend that never read it; given to an AIManager only
+	Reads   *[]AIRead `json:"reads,omitempty"`
+	Size    int       `json:"size"`
+	Updated time.Time `json:"updated"`
 }
 
 // ActionEnqueue One action to enqueue with PUT /actions.

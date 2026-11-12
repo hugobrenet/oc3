@@ -139,7 +139,7 @@ func aiTestAPI(t *testing.T) (*Api, *sql.DB) {
 		t.Fatal(err)
 	}
 	for _, m := range all {
-		if m.Name == "ai_content" {
+		if m.Name == "ai_content" || m.Name == "ai_resources_reads" || m.Name == "ai_skills_reads" {
 			statements = append(statements, m.Statements...)
 		}
 	}
@@ -291,5 +291,91 @@ func TestAIContentAccess(t *testing.T) {
 	// 3 creations, 2 replaces and a deletion; the refused writes are not logged.
 	if err := pool.QueryRow("SELECT COUNT(*) FROM log WHERE log_action LIKE 'ai.%'").Scan(&logged); err != nil || logged != 6 {
 		t.Errorf("logged %d writes, %v", logged, err)
+	}
+}
+
+// TestAIReadsAreCounted reads a resource and a skill on a MariaDB: a read
+// naming a backend, as the MCP servers make, counts for that backend, a read
+// naming none, as the admin views make, does not; an AIManager sees the
+// counts, a reader does not; a deletion takes them with the object.
+func TestAIReadsAreCounted(t *testing.T) {
+	a, pool := aiTestAPI(t)
+	oc3, om3 := server.Oc3, server.Om3
+	manager := []string{"AIManager"}
+	create := func(target, body string, h func(echo.Context) error) {
+		t.Helper()
+		c, rec := aiContext(http.MethodPost, target, body, manager...)
+		if _ = h(c); rec.Code != http.StatusCreated {
+			t.Fatalf("create: %d %s", rec.Code, rec.Body.String())
+		}
+	}
+	create("/ai/resources", `{"name":"naming","description":"The naming rules.","backends":["oc3","om3"],"body":"# Naming\n"}`, a.PostAIResources)
+	create("/ai/skills", fmt.Sprintf(`{"name":"maintenance","backends":["oc3"],"body":%q}`, skillMD), a.PostAISkills)
+
+	readResource := func(groups []string, backend *server.AIBackend) map[string]any {
+		t.Helper()
+		c, rec := aiContext(http.MethodGet, "/ai/resources/naming", "", groups...)
+		_ = a.GetAIResource(c, "naming", server.GetAIResourceParams{Backend: backend})
+		var item map[string]any
+		if err := json.Unmarshal(rec.Body.Bytes(), &item); err != nil || rec.Code != http.StatusOK {
+			t.Fatalf("read: %d %s", rec.Code, rec.Body.String())
+		}
+		return item
+	}
+	readResource([]string{"Ops"}, &oc3)
+	readResource([]string{"Ops"}, &oc3)
+	readResource([]string{"Ops"}, &om3)
+	readResource(manager, nil)
+	c, rec := aiContext(http.MethodGet, "/ai/skills/maintenance", "", "Ops")
+	if _ = a.GetAISkill(c, "maintenance", server.GetAISkillParams{Backend: &oc3}); rec.Code != http.StatusOK {
+		t.Fatalf("read the skill: %d", rec.Code)
+	}
+
+	counts := func(kind string) map[string]float64 {
+		t.Helper()
+		c, rec := aiContext(http.MethodGet, "/ai/"+kind, "", manager...)
+		if kind == "resources" {
+			_ = a.GetAIResources(c, server.GetAIResourcesParams{})
+		} else {
+			_ = a.GetAISkills(c, server.GetAISkillsParams{})
+		}
+		var list struct {
+			Data []struct {
+				Reads []struct {
+					Backend  string  `json:"backend"`
+					Count    float64 `json:"count"`
+					LastRead string  `json:"last_read"`
+				} `json:"reads"`
+			} `json:"data"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &list); err != nil || len(list.Data) != 1 {
+			t.Fatalf("list %s: %d %s", kind, rec.Code, rec.Body.String())
+		}
+		out := map[string]float64{}
+		for _, r := range list.Data[0].Reads {
+			if r.LastRead == "" {
+				t.Errorf("%s: a read of %s without its date", kind, r.Backend)
+			}
+			out[r.Backend] = r.Count
+		}
+		return out
+	}
+	if got := counts("resources"); len(got) != 2 || got["oc3"] != 2 || got["om3"] != 1 {
+		t.Errorf("resource reads %v, want oc3 2, om3 1", got)
+	}
+	if got := counts("skills"); len(got) != 1 || got["oc3"] != 1 {
+		t.Errorf("skill reads %v, want oc3 1", got)
+	}
+	if _, has := readResource([]string{"Ops"}, &oc3)["reads"]; has {
+		t.Errorf("a reader sees the reads")
+	}
+
+	c, rec = aiContext(http.MethodDelete, "/ai/resources/naming", "", manager...)
+	if _ = a.DeleteAIResource(c, "naming"); rec.Code >= 300 {
+		t.Fatalf("delete: %d %s", rec.Code, rec.Body.String())
+	}
+	var left int
+	if err := pool.QueryRow("SELECT COUNT(*) FROM ai_resources_reads").Scan(&left); err != nil || left != 0 {
+		t.Errorf("%d reads left after the deletion (%v)", left, err)
 	}
 }

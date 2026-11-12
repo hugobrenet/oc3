@@ -35,7 +35,7 @@ func IsAIManager(c echo.Context) bool {
 // object for an AIManager, the objects published to one of their groups or to
 // none for the others.
 func aiFilter(c echo.Context, backend *server.AIBackend, name string, withBody bool) cdb.AIContentFilter {
-	f := cdb.AIContentFilter{Name: name, Groups: UserGroupsFromContext(c), All: IsAIManager(c), WithBody: withBody}
+	f := cdb.AIContentFilter{Name: name, Groups: UserGroupsFromContext(c), All: IsAIManager(c), WithBody: withBody, WithReads: IsAIManager(c)}
 	if backend != nil {
 		f.Backend = string(*backend)
 	}
@@ -92,16 +92,31 @@ func aiPublications(c echo.Context, item cdb.AIContent) *[]int {
 	return &publications
 }
 
+// aiReads gives the reads of the assistants to an AIManager only, as the
+// publications: they tell the use of an object, which is not the business of
+// its readers.
+func aiReads(c echo.Context, item cdb.AIContent) *[]server.AIRead {
+	if !IsAIManager(c) {
+		return nil
+	}
+	reads := make([]server.AIRead, 0, len(item.Reads))
+	for _, r := range item.Reads {
+		reads = append(reads, server.AIRead{Backend: server.AIBackend(r.Backend), Count: r.Count, LastRead: r.Last.UTC()})
+	}
+	return &reads
+}
+
 func aiResourceMeta(c echo.Context, item cdb.AIContent) server.AIResourceMeta {
 	return server.AIResourceMeta{Name: item.Name, Title: item.Title, Description: item.Description, MimeType: item.MimeType,
-		Backends: aiBackends(item.Backends), Publications: aiPublications(c, item), Size: item.Size, Digest: item.Digest, Updated: item.Updated.UTC()}
+		Backends: aiBackends(item.Backends), Publications: aiPublications(c, item), Reads: aiReads(c, item), Size: item.Size,
+		Digest: item.Digest, Updated: item.Updated.UTC()}
 }
 
 func aiSkillMeta(c echo.Context, item cdb.AIContent) server.AISkillMeta {
 	frontmatter := map[string]any{}
 	_ = json.Unmarshal([]byte(item.Frontmatter), &frontmatter)
 	return server.AISkillMeta{Name: item.Name, Backends: aiBackends(item.Backends), Publications: aiPublications(c, item),
-		Frontmatter: frontmatter, Size: item.Size, Digest: item.Digest, Updated: item.Updated.UTC()}
+		Reads: aiReads(c, item), Frontmatter: frontmatter, Size: item.Size, Digest: item.Digest, Updated: item.Updated.UTC()}
 }
 
 // GetAIResources handles GET /ai/resources.
@@ -139,9 +154,10 @@ func (a *Api) GetAIResource(c echo.Context, name string, params server.GetAIReso
 	if len(items) == 0 {
 		return JSONProblemf(c, http.StatusNotFound, "no resource %s", name)
 	}
+	a.countAIRead(c, cdb.AIResources, name, params.Backend)
 	meta := aiResourceMeta(c, items[0])
 	return c.JSON(http.StatusOK, server.AIResource{Name: meta.Name, Title: meta.Title, Description: meta.Description,
-		MimeType: meta.MimeType, Backends: meta.Backends, Publications: meta.Publications, Size: meta.Size,
+		MimeType: meta.MimeType, Backends: meta.Backends, Publications: meta.Publications, Reads: meta.Reads, Size: meta.Size,
 		Digest: meta.Digest, Updated: meta.Updated, Body: items[0].Body})
 }
 
@@ -154,9 +170,25 @@ func (a *Api) GetAISkill(c echo.Context, name string, params server.GetAISkillPa
 	if len(items) == 0 {
 		return JSONProblemf(c, http.StatusNotFound, "no skill %s", name)
 	}
+	a.countAIRead(c, cdb.AISkills, name, params.Backend)
 	meta := aiSkillMeta(c, items[0])
-	return c.JSON(http.StatusOK, server.AISkill{Name: meta.Name, Backends: meta.Backends, Publications: meta.Publications,
+	return c.JSON(http.StatusOK, server.AISkill{Name: meta.Name, Backends: meta.Backends, Publications: meta.Publications, Reads: meta.Reads,
 		Frontmatter: meta.Frontmatter, Size: meta.Size, Digest: meta.Digest, Updated: meta.Updated, Body: items[0].Body})
+}
+
+// countAIRead counts a read of the text of an object by the assistants of
+// backend: the MCP servers name the backend they read for, the admin views
+// none, and only the former count. A failure is logged, the read answered
+// all the same.
+func (a *Api) countAIRead(c echo.Context, kind cdb.AIContentKind, name string, backend *server.AIBackend) {
+	if backend == nil {
+		return
+	}
+	ctx, cancel := context.WithTimeout(c.Request().Context(), a.SyncTimeout)
+	defer cancel()
+	if err := a.ODB.CountAIRead(ctx, kind, name, string(*backend)); err != nil {
+		echolog.GetLogHandler(c, "countAIRead").Error("cannot count the read", logkey.Error, err)
+	}
 }
 
 // readAI reads the objects of kind the caller may read; on an error, the

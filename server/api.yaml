@@ -23992,6 +23992,8 @@ paths:
         Display a resource of the AI assistant with its body, if the caller may read it
         (see GET /ai/resources): a resource that does not exist, is not for the backend
         asked, or is not published to the caller answers the same 404.
+        A read naming a backend, as the MCP servers make for the agent, counts
+        in the reads of the object for that backend, which an AIManager sees.
       parameters:
         - $ref: '#/components/parameters/inPathAIName'
         - $ref: '#/components/parameters/inQueryAIBackend'
@@ -24158,6 +24160,8 @@ paths:
         Display a skill of the AI assistant with its body, if the caller may read it
         (see GET /ai/skills): a skill that does not exist, is not for the backend
         asked, or is not published to the caller answers the same 404.
+        A read naming a backend, as the MCP servers make for the agent, counts
+        in the reads of the object for that backend, which an AIManager sees.
       parameters:
         - $ref: '#/components/parameters/inPathAIName'
         - $ref: '#/components/parameters/inQueryAIBackend'
@@ -24336,6 +24340,19 @@ components:
       enum: [om3, oc3]
       description: an AI backend of the agent, om3 for a cluster, oc3 for the collector
 
+    AIRead:
+      type: object
+      description: the reads of an object by the assistants of a backend, through a GET of its text with that backend
+      required: [backend, count, last_read]
+      properties:
+        backend:
+          $ref: '#/components/schemas/AIBackend'
+        count:
+          type: integer
+        last_read:
+          type: string
+          format: date-time
+
     AIResourceInput:
       type: object
       required: [description, backends, body]
@@ -24387,6 +24404,11 @@ components:
           description: the ids of the groups that may read it, empty for everybody; given to an AIManager only
           items:
             type: integer
+        reads:
+          type: array
+          description: the reads of the assistants, by backend, none for a backend that never read it; given to an AIManager only
+          items:
+            $ref: '#/components/schemas/AIRead'
         size:
           type: integer
           description: the bytes of the body
@@ -24454,6 +24476,11 @@ components:
           description: the ids of the groups that may read it, empty for everybody; given to an AIManager only
           items:
             type: integer
+        reads:
+          type: array
+          description: the reads of the assistants, by backend, none for a backend that never read it; given to an AIManager only
+          items:
+            $ref: '#/components/schemas/AIRead'
         frontmatter:
           type: object
           additionalProperties: true
