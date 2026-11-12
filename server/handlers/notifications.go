@@ -71,8 +71,13 @@ func (a *Api) notifyAuthor(c echo.Context) string {
 
 // notifyChannelAPI is a channel as the API shows it: its secrets told set or
 // not, never given.
-func (a *Api) notifyChannelAPI(ch *cdb.NotifyChannel) (server.NotificationChannel, error) {
+func (a *Api) notifyChannelAPI(ch *cdb.NotifyChannel, schedules []cdb.AISchedule) (server.NotificationChannel, error) {
+	refs := make([]server.AIScheduleRef, 0, len(schedules))
+	for _, s := range schedules {
+		refs = append(refs, server.AIScheduleRef{Id: s.ID, Name: s.Name, Skill: s.Skill, Enabled: s.Enabled})
+	}
 	out := server.NotificationChannel{
+		AiSchedules: refs,
 		Id:          ch.ID,
 		Name:        ch.Name,
 		Type:        server.NotificationChannelType(ch.Type),
@@ -231,9 +236,13 @@ func (a *Api) GetNotificationChannels(c echo.Context) error {
 	if err != nil {
 		return httpProblem(c, httpInternal(log, "cannot read the channels", err))
 	}
+	schedules, err := a.ODB.AISchedulesByChannel(c.Request().Context())
+	if err != nil {
+		return httpProblem(c, httpInternal(log, "cannot read the AI schedules", err))
+	}
 	data := make([]server.NotificationChannel, 0, len(channels))
 	for i := range channels {
-		item, err := a.notifyChannelAPI(&channels[i])
+		item, err := a.notifyChannelAPI(&channels[i], schedules[channels[i].ID])
 		if err != nil {
 			return httpProblem(c, httpInternal(log, "cannot read the channel "+channels[i].Name, err))
 		}
@@ -259,7 +268,11 @@ func (a *Api) notifyChannelResponse(c echo.Context, id int64) error {
 	if ch == nil {
 		return httpProblem(c, httpErrorf(http.StatusNotFound, "channel %d not found", id))
 	}
-	out, err := a.notifyChannelAPI(ch)
+	schedules, err := a.ODB.AISchedulesByChannel(c.Request().Context())
+	if err != nil {
+		return httpProblem(c, httpInternal(log, "cannot read the AI schedules", err))
+	}
+	out, err := a.notifyChannelAPI(ch, schedules[id])
 	if err != nil {
 		return httpProblem(c, httpInternal(log, "cannot read the channel", err))
 	}
@@ -361,6 +374,20 @@ func (a *Api) DeleteNotificationChannel(c echo.Context, channelId server.InPathN
 	}
 	if ch == nil {
 		return httpProblem(c, httpErrorf(http.StatusNotFound, "channel %d not found", channelId))
+	}
+	// A schedule sending to the channel would fail at each run: the channel
+	// goes once no schedule names it.
+	schedules, err := a.ODB.AISchedulesByChannel(ctx)
+	if err != nil {
+		return httpProblem(c, httpInternal(log, "cannot read the AI schedules", err))
+	}
+	if used := schedules[channelId]; len(used) > 0 {
+		names := make([]string, len(used))
+		for i, s := range used {
+			names[i] = s.Name
+		}
+		return httpProblem(c, httpErrorf(http.StatusConflict,
+			"the channel %s receives the reports of the AI schedules %s: remove it from them first", ch.Name, strings.Join(names, ", ")))
 	}
 	if _, err := a.ODB.DeleteNotifyChannel(ctx, channelId); err != nil {
 		return httpProblem(c, httpInternal(log, "cannot delete the channel", err))

@@ -80,24 +80,30 @@ func (s Sender) Send(ctx context.Context, dest Destination, d Digest) error {
 	case ChannelTeams:
 		return s.post(ctx, dest, TeamsPayload(d), nil)
 	case ChannelWebhook:
-		body, err := json.Marshal(WebhookPayload(d))
-		if err != nil {
-			return err
-		}
-		headers := http.Header{}
-		if dest.Secret != "" {
-			now := time.Now
-			if s.Now != nil {
-				now = s.Now
-			}
-			ts := strconv.FormatInt(now().Unix(), 10)
-			headers.Set("X-OC3-Timestamp", ts)
-			headers.Set("X-OC3-Signature", Sign(dest.Secret, ts, body))
-		}
-		return s.postRaw(ctx, dest, body, headers)
+		return s.postSigned(ctx, dest, WebhookPayload(d))
 	default:
 		return fmt.Errorf("unknown channel type %q", dest.Type)
 	}
+}
+
+// postSigned posts payload to a generic webhook, signed when the channel has
+// a secret.
+func (s Sender) postSigned(ctx context.Context, dest Destination, payload any) error {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	headers := http.Header{}
+	if dest.Secret != "" {
+		now := time.Now
+		if s.Now != nil {
+			now = s.Now
+		}
+		ts := strconv.FormatInt(now().Unix(), 10)
+		headers.Set("X-OC3-Timestamp", ts)
+		headers.Set("X-OC3-Signature", Sign(dest.Secret, ts, body))
+	}
+	return s.postRaw(ctx, dest, body, headers)
 }
 
 // Sign returns the signature of a generic webhook: "sha256=" and the hex of

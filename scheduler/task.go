@@ -71,6 +71,8 @@ var (
 		TaskPurgeNodes,
 		TaskNotify,
 		TaskNotifyJanitor,
+		TaskAISchedulesQueue,
+		TaskAISchedulesRun,
 	}
 
 	taskExecCounter = promauto.NewCounterVec(

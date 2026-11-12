@@ -11742,7 +11742,10 @@ paths:
         - bearerAuth: [ ]
     delete:
       operationId: DeleteNotificationChannel
-      description: Delete a channel and its subscriptions. For the Managers and the AlertsManagers.
+      description: |
+        Delete a channel and its subscriptions. For the Managers and the AlertsManagers.
+        A channel a schedule of the AI assistant skills sends to is not deleted (409):
+        remove it from the schedules first.
       parameters:
         - $ref: '#/components/parameters/inPathNotificationChannelId'
       tags:
@@ -11752,6 +11755,8 @@ paths:
           description: Deleted.
         404:
           $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
         401:
           $ref: '#/components/responses/401'
         403:
@@ -24246,6 +24251,237 @@ paths:
         - basicAuth: [ ]
         - bearerAuth: [ ]
 
+  /ai/schedules:
+    get:
+      operationId: GetAISchedules
+      description: |
+        List the schedules of the skills of the AI assistant, by name; of one skill
+        with skill. Requires the AIManager or Manager privilege: a schedule runs as
+        the technical account of the collector, and its reports tell what that
+        account reads.
+      parameters:
+        - in: query
+          name: skill
+          description: the skill whose schedules to list
+          schema:
+            type: string
+      tags:
+        - ai
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIScheduleListResponse'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    post:
+      operationId: PostAISchedules
+      description: |
+        Schedule a skill of the AI assistant: the scheduler of the collector asks the
+        assistant to run it at the time given, on the days given, in the time zone
+        given, as the technical account of the collector and without the changes
+        that need a confirmation, and sends the answer to the notification channels
+        given. Requires the AIManager or Manager privilege.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIScheduleInput'
+      tags:
+        - ai
+      responses:
+        201:
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AISchedule'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /ai/schedules/{schedule_id}:
+    get:
+      operationId: GetAISchedule
+      description: |
+        Display a schedule of a skill of the AI assistant. Requires the AIManager or
+        Manager privilege.
+      parameters:
+        - $ref: '#/components/parameters/inPathAIScheduleId'
+      tags:
+        - ai
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AISchedule'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    put:
+      operationId: PutAISchedule
+      description: |
+        Replace a schedule of a skill of the AI assistant; its next run follows the
+        new days, time and time zone. Requires the AIManager or Manager privilege.
+      parameters:
+        - $ref: '#/components/parameters/inPathAIScheduleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIScheduleInput'
+      tags:
+        - ai
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AISchedule'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    delete:
+      operationId: DeleteAISchedule
+      description: |
+        Delete a schedule of a skill of the AI assistant, with its runs. Requires the
+        AIManager or Manager privilege.
+      parameters:
+        - $ref: '#/components/parameters/inPathAIScheduleId'
+      tags:
+        - ai
+      responses:
+        204:
+          description: Deleted
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+  /ai/schedules/{schedule_id}/runs:
+    get:
+      operationId: GetAIScheduleRuns
+      description: |
+        List the latest runs of a schedule, the most recent first, with their
+        reports. Requires the AIManager or Manager privilege.
+      parameters:
+        - $ref: '#/components/parameters/inPathAIScheduleId'
+        - in: query
+          name: limit
+          description: the most runs to list, 20 by default, 100 at most
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      tags:
+        - ai
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIScheduleRunListResponse'
+        400:
+          $ref: '#/components/responses/400'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
+    post:
+      operationId: PostAIScheduleRuns
+      description: |
+        Run a schedule at once, enabled or not: the run is queued, and the scheduler
+        of the collector starts it within a minute and sends its report to the
+        channels of the schedule. A schedule has one run queued at most. Requires
+        the AIManager or Manager privilege.
+      parameters:
+        - $ref: '#/components/parameters/inPathAIScheduleId'
+      tags:
+        - ai
+      responses:
+        202:
+          description: Queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIScheduleRun'
+        401:
+          $ref: '#/components/responses/401'
+        403:
+          $ref: '#/components/responses/403'
+        404:
+          $ref: '#/components/responses/404'
+        409:
+          $ref: '#/components/responses/409'
+        500:
+          $ref: '#/components/responses/500'
+      security:
+        - basicAuth: [ ]
+        - bearerAuth: [ ]
+
 components:
 
   responses:
@@ -24501,6 +24737,193 @@ components:
           properties:
             body:
               type: string
+
+    AIScheduleDay:
+      type: string
+      enum: [mon, tue, wed, thu, fri, sat, sun]
+
+    AIScheduleInput:
+      type: object
+      required: [name, skill, days, at, timezone, channels]
+      properties:
+        name:
+          type: string
+          description: the name of the schedule, unique, of lowercase letters, digits and dashes, at most 64
+        skill:
+          type: string
+          description: the skill to run, for the oc3 backend
+        prompt:
+          type: string
+          description: what to ask the assistant with the skill, at most 4000 characters; the skill alone when empty
+        days:
+          type: array
+          description: the days of the week it runs on
+          items:
+            $ref: '#/components/schemas/AIScheduleDay'
+        at:
+          type: string
+          description: the time it runs at, HH:MM
+          example: "08:00"
+        timezone:
+          type: string
+          description: the time zone of the time, such as Europe/Paris
+        channels:
+          type: array
+          description: the ids of the notification channels the report goes to, 1 to 10
+          items:
+            type: integer
+            format: int64
+        send_failures:
+          type: boolean
+          description: send a message to the channels when a run gives no report, true by default
+        enabled:
+          type: boolean
+          description: true by default; a disabled schedule only runs when asked to
+
+    AISchedule:
+      type: object
+      required: [id, name, skill, prompt, days, at, timezone, channels, send_failures, enabled, created, updated, updated_by]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        skill:
+          type: string
+        prompt:
+          type: string
+        days:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIScheduleDay'
+        at:
+          type: string
+        timezone:
+          type: string
+        channels:
+          type: array
+          items:
+            type: integer
+            format: int64
+        send_failures:
+          type: boolean
+        enabled:
+          type: boolean
+        next_run:
+          type: string
+          format: date-time
+          description: when it runs next, absent when disabled
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+        updated_by:
+          type: string
+
+    AIScheduleRef:
+      type: object
+      description: A schedule of an AI assistant skill, as a notification channel names it.
+      required: [id, name, skill, enabled]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        skill:
+          type: string
+        enabled:
+          type: boolean
+
+    AIScheduleListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AISchedule'
+
+    AIScheduleRun:
+      type: object
+      required: [id, schedule_id, trigger, state, queued, tool_calls, refused_actions, report, error, queued_by]
+      properties:
+        id:
+          type: integer
+          format: int64
+        schedule_id:
+          type: integer
+          format: int64
+        trigger:
+          type: string
+          enum: [schedule, manual]
+        state:
+          type: string
+          description: |
+            queued, running, then sent (the report reached a channel at least),
+            unsent (no channel took it) or failed (the assistant gave no report)
+          enum: [queued, running, sent, failed, unsent]
+        queued:
+          type: string
+          format: date-time
+        started:
+          type: string
+          format: date-time
+        ended:
+          type: string
+          format: date-time
+        tool_calls:
+          type: integer
+          description: the tools the assistant called
+        refused_actions:
+          type: integer
+          description: the changes the assistant asked to make, not made
+        report:
+          type: string
+          description: the answer of the assistant, in Markdown
+        error:
+          type: string
+          description: why the run failed, or which channels did not take the report
+        queued_by:
+          type: string
+          description: who asked for the run, empty for a scheduled one
+        request_id:
+          type: string
+          description: the X-Request-ID the agent gave the run, which its audit carries with the run ID oc3-schedule-run-<id>
+        calls:
+          type: array
+          description: the calls of tools the run made, the first 256, by identifiers only
+          items:
+            $ref: '#/components/schemas/AIScheduleRunCall'
+
+    AIScheduleRunCall:
+      type: object
+      required: [name, duration_ms, error]
+      properties:
+        name:
+          type: string
+        duration_ms:
+          type: integer
+          format: int64
+        error:
+          type: boolean
+          description: the call failed, or did not run
+        not_run:
+          type: string
+          description: why the call did not run, unoffered (such as a write) or needs_confirmation
+          enum: [unoffered, needs_confirmation]
+
+    AIScheduleRunListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AIScheduleRun'
 
     AISkillListResponse:
       type: object
@@ -28328,6 +28751,7 @@ components:
         - addresses
         - networks
         - secrets
+        - ai_schedules
         - updated_by
         - created
         - updated
@@ -28339,6 +28763,14 @@ components:
           type: string
         type:
           $ref: '#/components/schemas/NotificationChannelType'
+        ai_schedules:
+          type: array
+          description: |
+            The schedules of the AI assistant skills sending their reports to the
+            channel, by name: their names and skills only. A channel they use is not
+            deleted.
+          items:
+            $ref: '#/components/schemas/AIScheduleRef'
         description:
           type: string
         enabled:
@@ -31906,6 +32338,13 @@ components:
       schema:
         $ref: '#/components/schemas/AIBackend'
 
+    inPathAIScheduleId:
+      in: path
+      name: schedule_id
+      required: true
+      schema:
+        type: integer
+        format: int64
     inPathAIName:
       in: path
       name: name

@@ -222,6 +222,7 @@ func setup(section string) error {
 		return err
 	}
 	setDefaultNotificationsConfig()
+	setDefaultAISchedulesConfig()
 	slog.Info(fmt.Sprintf("used config file: %s", viper.ConfigFileUsed()))
 	slog.Info(fmt.Sprintf("oc3 version: %s", version.Version()))
 	return nil

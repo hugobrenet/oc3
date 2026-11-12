@@ -53,6 +53,102 @@ func (e AIResourceInputMimeType) Valid() bool {
 	}
 }
 
+// Defines values for AIScheduleDay.
+const (
+	Fri AIScheduleDay = "fri"
+	Mon AIScheduleDay = "mon"
+	Sat AIScheduleDay = "sat"
+	Sun AIScheduleDay = "sun"
+	Thu AIScheduleDay = "thu"
+	Tue AIScheduleDay = "tue"
+	Wed AIScheduleDay = "wed"
+)
+
+// Valid indicates whether the value is a known member of the AIScheduleDay enum.
+func (e AIScheduleDay) Valid() bool {
+	switch e {
+	case Fri:
+		return true
+	case Mon:
+		return true
+	case Sat:
+		return true
+	case Sun:
+		return true
+	case Thu:
+		return true
+	case Tue:
+		return true
+	case Wed:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AIScheduleRunState.
+const (
+	AIScheduleRunStateFailed  AIScheduleRunState = "failed"
+	AIScheduleRunStateQueued  AIScheduleRunState = "queued"
+	AIScheduleRunStateRunning AIScheduleRunState = "running"
+	AIScheduleRunStateSent    AIScheduleRunState = "sent"
+	AIScheduleRunStateUnsent  AIScheduleRunState = "unsent"
+)
+
+// Valid indicates whether the value is a known member of the AIScheduleRunState enum.
+func (e AIScheduleRunState) Valid() bool {
+	switch e {
+	case AIScheduleRunStateFailed:
+		return true
+	case AIScheduleRunStateQueued:
+		return true
+	case AIScheduleRunStateRunning:
+		return true
+	case AIScheduleRunStateSent:
+		return true
+	case AIScheduleRunStateUnsent:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AIScheduleRunTrigger.
+const (
+	Manual   AIScheduleRunTrigger = "manual"
+	Schedule AIScheduleRunTrigger = "schedule"
+)
+
+// Valid indicates whether the value is a known member of the AIScheduleRunTrigger enum.
+func (e AIScheduleRunTrigger) Valid() bool {
+	switch e {
+	case Manual:
+		return true
+	case Schedule:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for AIScheduleRunCallNotRun.
+const (
+	NeedsConfirmation AIScheduleRunCallNotRun = "needs_confirmation"
+	Unoffered         AIScheduleRunCallNotRun = "unoffered"
+)
+
+// Valid indicates whether the value is a known member of the AIScheduleRunCallNotRun enum.
+func (e AIScheduleRunCallNotRun) Valid() bool {
+	switch e {
+	case NeedsConfirmation:
+		return true
+	case Unoffered:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for AssistantFeedbackRating.
 const (
 	AssistantFeedbackRatingDown AssistantFeedbackRating = "down"
@@ -1240,22 +1336,22 @@ func (e SysreportFileStatKind) Valid() bool {
 
 // Defines values for SysreportPurgeState.
 const (
-	SysreportPurgeStateDone    SysreportPurgeState = "done"
-	SysreportPurgeStateFailed  SysreportPurgeState = "failed"
-	SysreportPurgeStateQueued  SysreportPurgeState = "queued"
-	SysreportPurgeStateRunning SysreportPurgeState = "running"
+	Done    SysreportPurgeState = "done"
+	Failed  SysreportPurgeState = "failed"
+	Queued  SysreportPurgeState = "queued"
+	Running SysreportPurgeState = "running"
 )
 
 // Valid indicates whether the value is a known member of the SysreportPurgeState enum.
 func (e SysreportPurgeState) Valid() bool {
 	switch e {
-	case SysreportPurgeStateDone:
+	case Done:
 		return true
-	case SysreportPurgeStateFailed:
+	case Failed:
 		return true
-	case SysreportPurgeStateQueued:
+	case Queued:
 		return true
-	case SysreportPurgeStateRunning:
+	case Running:
 		return true
 	default:
 		return false
@@ -1929,6 +2025,133 @@ type AIResourceMeta struct {
 	Size    int       `json:"size"`
 	Title   string    `json:"title"`
 	Updated time.Time `json:"updated"`
+}
+
+// AISchedule defines model for AISchedule.
+type AISchedule struct {
+	At       string          `json:"at"`
+	Channels []int64         `json:"channels"`
+	Created  time.Time       `json:"created"`
+	Days     []AIScheduleDay `json:"days"`
+	Enabled  bool            `json:"enabled"`
+	Id       int64           `json:"id"`
+	Name     string          `json:"name"`
+
+	// NextRun when it runs next, absent when disabled
+	NextRun      *time.Time `json:"next_run,omitempty"`
+	Prompt       string     `json:"prompt"`
+	SendFailures bool       `json:"send_failures"`
+	Skill        string     `json:"skill"`
+	Timezone     string     `json:"timezone"`
+	Updated      time.Time  `json:"updated"`
+	UpdatedBy    string     `json:"updated_by"`
+}
+
+// AIScheduleDay defines model for AIScheduleDay.
+type AIScheduleDay string
+
+// AIScheduleInput defines model for AIScheduleInput.
+type AIScheduleInput struct {
+	// At the time it runs at, HH:MM
+	At string `json:"at"`
+
+	// Channels the ids of the notification channels the report goes to, 1 to 10
+	Channels []int64 `json:"channels"`
+
+	// Days the days of the week it runs on
+	Days []AIScheduleDay `json:"days"`
+
+	// Enabled true by default; a disabled schedule only runs when asked to
+	Enabled *bool `json:"enabled,omitempty"`
+
+	// Name the name of the schedule, unique, of lowercase letters, digits and dashes, at most 64
+	Name string `json:"name"`
+
+	// Prompt what to ask the assistant with the skill, at most 4000 characters; the skill alone when empty
+	Prompt *string `json:"prompt,omitempty"`
+
+	// SendFailures send a message to the channels when a run gives no report, true by default
+	SendFailures *bool `json:"send_failures,omitempty"`
+
+	// Skill the skill to run, for the oc3 backend
+	Skill string `json:"skill"`
+
+	// Timezone the time zone of the time, such as Europe/Paris
+	Timezone string `json:"timezone"`
+}
+
+// AIScheduleListResponse defines model for AIScheduleListResponse.
+type AIScheduleListResponse struct {
+	Data []AISchedule `json:"data"`
+}
+
+// AIScheduleRef A schedule of an AI assistant skill, as a notification channel names it.
+type AIScheduleRef struct {
+	Enabled bool   `json:"enabled"`
+	Id      int64  `json:"id"`
+	Name    string `json:"name"`
+	Skill   string `json:"skill"`
+}
+
+// AIScheduleRun defines model for AIScheduleRun.
+type AIScheduleRun struct {
+	// Calls the calls of tools the run made, the first 256, by identifiers only
+	Calls *[]AIScheduleRunCall `json:"calls,omitempty"`
+	Ended *time.Time           `json:"ended,omitempty"`
+
+	// Error why the run failed, or which channels did not take the report
+	Error  string    `json:"error"`
+	Id     int64     `json:"id"`
+	Queued time.Time `json:"queued"`
+
+	// QueuedBy who asked for the run, empty for a scheduled one
+	QueuedBy string `json:"queued_by"`
+
+	// RefusedActions the changes the assistant asked to make, not made
+	RefusedActions int `json:"refused_actions"`
+
+	// Report the answer of the assistant, in Markdown
+	Report string `json:"report"`
+
+	// RequestId the X-Request-ID the agent gave the run, which its audit carries with the run ID oc3-schedule-run-<id>
+	RequestId  *string    `json:"request_id,omitempty"`
+	ScheduleId int64      `json:"schedule_id"`
+	Started    *time.Time `json:"started,omitempty"`
+
+	// State queued, running, then sent (the report reached a channel at least),
+	// unsent (no channel took it) or failed (the assistant gave no report)
+	State AIScheduleRunState `json:"state"`
+
+	// ToolCalls the tools the assistant called
+	ToolCalls int                  `json:"tool_calls"`
+	Trigger   AIScheduleRunTrigger `json:"trigger"`
+}
+
+// AIScheduleRunState queued, running, then sent (the report reached a channel at least),
+// unsent (no channel took it) or failed (the assistant gave no report)
+type AIScheduleRunState string
+
+// AIScheduleRunTrigger defines model for AIScheduleRun.Trigger.
+type AIScheduleRunTrigger string
+
+// AIScheduleRunCall defines model for AIScheduleRunCall.
+type AIScheduleRunCall struct {
+	DurationMs int64 `json:"duration_ms"`
+
+	// Error the call failed, or did not run
+	Error bool   `json:"error"`
+	Name  string `json:"name"`
+
+	// NotRun why the call did not run, unoffered (such as a write) or needs_confirmation
+	NotRun *AIScheduleRunCallNotRun `json:"not_run,omitempty"`
+}
+
+// AIScheduleRunCallNotRun why the call did not run, unoffered (such as a write) or needs_confirmation
+type AIScheduleRunCallNotRun string
+
+// AIScheduleRunListResponse defines model for AIScheduleRunListResponse.
+type AIScheduleRunListResponse struct {
+	Data []AIScheduleRun `json:"data"`
 }
 
 // AISkill defines model for AISkill.
@@ -5176,10 +5399,15 @@ type NodeStatsResponse struct {
 // X-OC3-Timestamp, a dot and the body.
 type NotificationChannel struct {
 	// Addresses The mail addresses of an email channel.
-	Addresses   []string `json:"addresses"`
-	Created     string   `json:"created"`
-	Description string   `json:"description"`
-	Enabled     bool     `json:"enabled"`
+	Addresses []string `json:"addresses"`
+
+	// AiSchedules The schedules of the AI assistant skills sending their reports to the
+	// channel, by name: their names and skills only. A channel they use is not
+	// deleted.
+	AiSchedules []AIScheduleRef `json:"ai_schedules"`
+	Created     string          `json:"created"`
+	Description string          `json:"description"`
+	Enabled     bool            `json:"enabled"`
 
 	// IconUrl The picture a Slack or a Mattermost message shows, when the webhook lets the sender choose it.
 	IconUrl *string `json:"icon_url,omitempty"`
@@ -7152,6 +7380,9 @@ type Version struct {
 // InPathAIName defines model for inPathAIName.
 type InPathAIName = string
 
+// InPathAIScheduleId defines model for inPathAIScheduleId.
+type InPathAIScheduleId = int64
+
 // InPathComplianceAgentName defines model for inPathComplianceAgentName.
 type InPathComplianceAgentName = string
 
@@ -7452,6 +7683,18 @@ type GetAIResourcesParams struct {
 type GetAIResourceParams struct {
 	// Backend only the objects for this backend, as the MCP servers ask; all of them when absent
 	Backend *InQueryAIBackend `form:"backend,omitempty" json:"backend,omitempty"`
+}
+
+// GetAISchedulesParams defines parameters for GetAISchedules.
+type GetAISchedulesParams struct {
+	// Skill the skill whose schedules to list
+	Skill *string `form:"skill,omitempty" json:"skill,omitempty"`
+}
+
+// GetAIScheduleRunsParams defines parameters for GetAIScheduleRuns.
+type GetAIScheduleRunsParams struct {
+	// Limit the most runs to list, 20 by default, 100 at most
+	Limit *int `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
 // GetAISkillsParams defines parameters for GetAISkills.
@@ -17259,6 +17502,12 @@ type PostAIResourcesJSONRequestBody = AIResourceInput
 
 // PutAIResourceJSONRequestBody defines body for PutAIResource for application/json ContentType.
 type PutAIResourceJSONRequestBody = AIResourceInput
+
+// PostAISchedulesJSONRequestBody defines body for PostAISchedules for application/json ContentType.
+type PostAISchedulesJSONRequestBody = AIScheduleInput
+
+// PutAIScheduleJSONRequestBody defines body for PutAISchedule for application/json ContentType.
+type PutAIScheduleJSONRequestBody = AIScheduleInput
 
 // PostAISkillsJSONRequestBody defines body for PostAISkills for application/json ContentType.
 type PostAISkillsJSONRequestBody = AISkillInput
